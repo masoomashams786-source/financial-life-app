@@ -9,9 +9,9 @@ const getAuthHeaders = () => {
 
 // Calculator mutations
 export const comparePlan = (data) => {
-  return api.post("/calculator/compare", data, { headers: getAuthHeaders() });
+  return api.post("/calculator/compare", data);
 };
 
 export const compareMultiplePlans = (data) => {
-  return api.post("/calculator/compare-multiple", data, { headers: getAuthHeaders() });
+  return api.post("/calculator/compare-multiple", data);
 };

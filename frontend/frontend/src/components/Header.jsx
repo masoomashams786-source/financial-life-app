@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AppBar, Toolbar, Box, Typography, IconButton, Button } from "@mui/material";
+import { AppBar, Toolbar, Box, Typography, IconButton, Button, Stack, useTheme, useMediaQuery } from "@mui/material";
 import { InfoOutlined, NewspaperOutlined, LogoutOutlined } from "@mui/icons-material";
 import { useAuth } from "../auth/useAuth";
 import NewsModal from "./NewsModal";
@@ -8,14 +8,16 @@ export default function Header() {
   const { user, logout } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState(""); // "news" or "articles"
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   // Trust Colors Palette
   const colors = {
-    primary: "#0A2540", // Deep navy (Stability/Trust)
-    accent: "#00D4FF",  // Clean blue (Modernity/Growth)
-    surface: "rgba(255, 255, 255, 0.8)", // Glassmorphism base
-    border: "#E6E9F0",
-    textSecondary: "#697386"
+    primary: "#0A2540",
+    accent: "#00D4FF",
+    surface: "rgba(255, 255, 255, 0.9)",
+    border: "rgba(226, 232, 240, 0.8)",
+    textSecondary: "#64748b"
   };
 
   const handleInfoClick = () => {
@@ -39,70 +41,76 @@ export default function Header() {
         elevation={0}
         sx={{ 
           bgcolor: colors.surface, 
-          backdropFilter: "blur(10px)", // Modern glass effect
+          backdropFilter: "blur(12px)",
           borderBottom: `1px solid ${colors.border}`,
           color: colors.primary,
-          px: { xs: 1, md: 4 }
+          px: { xs: 0, md: 2 }
         }}
       >
-        <Toolbar sx={{ justifyContent: "space-between", py: 1.5 }}>
+        <Toolbar sx={{ justifyContent: "space-between", py: 1 }}>
           
           {/* Left: Brand Identity */}
-          <Box display="flex" alignItems="center" gap={2}>
+          <Stack direction="row" alignItems="center" spacing={2}>
             <Box
               sx={{
-                width: 42,
-                height: 42,
-                borderRadius: "12px",
-                background: `linear-gradient(135deg, ${colors.primary} 0%, #1a3a5a 100%)`,
+                width: 40,
+                height: 40,
+                borderRadius: "10px",
+                background: `linear-gradient(135deg, ${colors.primary} 0%, #1e3a8a 100%)`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 4px 12px rgba(10, 37, 64, 0.15)",
+                boxShadow: "0 8px 16px -4px rgba(10, 37, 64, 0.3)",
                 color: colors.accent,
-                fontSize: "1.4rem",
-                fontWeight: 800
+                fontSize: "1.2rem",
+                fontWeight: 900
               }}
             >
               $
             </Box>
             <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-              <Typography variant="subtitle1" fontWeight={700} lineHeight={1}>
+              <Typography 
+                variant="subtitle1" 
+                fontWeight={800} 
+                sx={{ letterSpacing: "-0.02em", lineHeight: 1.1 }}
+              >
                 FinFuture
               </Typography>
-              <Typography variant="caption" color={colors.textSecondary}>
-                Secure Analysis
+              <Typography 
+                variant="caption" 
+                sx={{ color: colors.textSecondary, fontWeight: 500, letterSpacing: "0.02em" }}
+              >
+                INSIGHT ENGINE
               </Typography>
             </Box>
-          </Box>
+          </Stack>
 
-          {/* Center: Personalized Context */}
-          <Box 
-            textAlign="center" 
-            sx={{ 
-              display: { xs: 'none', md: 'block' },
-              bgcolor: "#F7F9FC", 
-              px: 3, 
-              py: 1, 
-              borderRadius: "20px" 
-            }}
-          >
-            <Typography variant="body1" fontWeight={600} color={colors.primary}>
-              Welcome back, {user?.username || "Investor"}
-            </Typography>
-            <Typography variant="caption" color={colors.textSecondary} sx={{ display: 'block' }}>
-              Your habits today shape your wealth tomorrow
-            </Typography>
-          </Box>
+          {/* Center: Personalized Context (Hidden on mobile) */}
+          {!isMobile && (
+            <Box 
+              sx={{ 
+                bgcolor: "rgba(10, 37, 64, 0.04)", 
+                px: 3, 
+                py: 0.75, 
+                borderRadius: "100px",
+                border: "1px solid rgba(10, 37, 64, 0.05)"
+              }}
+            >
+              <Typography variant="body2" fontWeight={600} color={colors.primary}>
+                Welcome back, <Box component="span" sx={{ color: "#2563eb" }}>{user?.username || "Investor"}</Box>
+              </Typography>
+            </Box>
+          )}
 
           {/* Right: Functional Actions */}
-          <Box display="flex" alignItems="center" gap={1.5}>
+          <Stack direction="row" alignItems="center" spacing={{ xs: 0.5, sm: 1.5 }}>
             <IconButton 
               onClick={handleInfoClick}
+              size="small"
               sx={{ 
                 color: colors.textSecondary,
-                transition: "0.2s",
-                "&:hover": { color: colors.primary, bgcolor: "rgba(0,0,0,0.04)" }
+                transition: "all 0.2s",
+                "&:hover": { color: colors.primary, bgcolor: "rgba(10, 37, 64, 0.05)" }
               }}
             >
               <InfoOutlined fontSize="small" />
@@ -110,38 +118,42 @@ export default function Header() {
 
             <IconButton 
               onClick={handleNewsClick}
+              size="small"
               sx={{ 
                 color: colors.textSecondary,
-                transition: "0.2s",
-                "&:hover": { color: colors.primary, bgcolor: "rgba(0,0,0,0.04)" }
+                transition: "all 0.2s",
+                "&:hover": { color: colors.primary, bgcolor: "rgba(10, 37, 64, 0.05)" }
               }}
             >
               <NewspaperOutlined fontSize="small" />
             </IconButton>
 
-            <Box sx={{ width: "1px", height: "24px", bgcolor: colors.border, mx: 1 }} />
+            <Box sx={{ width: "1px", height: "20px", bgcolor: colors.border, mx: 1 }} />
 
             <Button
               variant="text"
               color="inherit"
-              endIcon={<LogoutOutlined sx={{ fontSize: 18 }} />}
+              size="small"
+              endIcon={<LogoutOutlined sx={{ fontSize: 16 }} />}
               onClick={logout}
               sx={{ 
                 textTransform: "none",
-                fontWeight: 600,
+                fontWeight: 700,
                 color: colors.textSecondary,
                 borderRadius: "8px",
-                px: 2,
-                "&:hover": { color: "#d32f2f", bgcolor: "rgba(211, 47, 47, 0.04)" }
+                px: { xs: 1, sm: 2 },
+                "&:hover": { 
+                  color: "#e11d48", 
+                  bgcolor: "rgba(225, 29, 72, 0.05)" 
+                }
               }}
             >
-              Exit
+              {isMobile ? "" : "Exit"}
             </Button>
-          </Box>
+          </Stack>
         </Toolbar>
       </AppBar>
 
-      {/* News/Articles Modal */}
       <NewsModal 
         open={modalOpen} 
         onClose={handleCloseModal} 

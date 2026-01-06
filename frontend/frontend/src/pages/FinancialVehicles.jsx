@@ -6,8 +6,12 @@ import {
   Typography,
   Tabs,
   Tab,
-  Button,
   IconButton,
+  Stack,
+  Fade,
+  Paper,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import Header from "../components/header";
@@ -18,11 +22,14 @@ import CalculatorSection from "../components/vehicles/CalculatorSection";
 export default function FinancialVehicles() {
   const [activeTab, setActiveTab] = useState(0);
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const colors = {
     primary: "#0A2540",
     accent: "#00D4FF",
-    background: "#16385aff",
+    background: "#0f172a", // Updated to a modern deep slate
+    surface: "rgba(255, 255, 255, 0.98)",
   };
 
   const handleTabChange = (event, newValue) => {
@@ -30,77 +37,122 @@ export default function FinancialVehicles() {
   };
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: colors.background }}>
+    <Box 
+      sx={{ 
+        minHeight: "100vh", 
+        bgcolor: colors.background,
+        backgroundImage: "radial-gradient(at 100% 0%, rgba(0, 212, 255, 0.05) 0, transparent 50%)",
+        pb: 8
+      }}
+    >
       <Header />
 
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Container maxWidth="xl" sx={{ py: { xs: 3, md: 6 } }}>
         {/* Page Header */}
-        <Box mb={4}>
-          <Box display="flex" alignItems="center" gap={2} mb={2}>
+        <Box mb={5}>
+          <Stack 
+            direction={{ xs: "column", sm: "row" }} 
+            alignItems={{ xs: "flex-start", sm: "center" }} 
+            spacing={2}
+          >
             <IconButton
               onClick={() => navigate("/dashboard")}
               sx={{
-                bgcolor: "rgba(255,255,255,0.1)",
+                bgcolor: "rgba(255,255,255,0.05)",
+                backdropFilter: "blur(8px)",
                 color: "white",
-                "&:hover": { bgcolor: "rgba(255,255,255,0.2)" },
+                border: "1px solid rgba(255,255,255,0.1)",
+                transition: "all 0.2s ease-in-out",
+                "&:hover": { 
+                  bgcolor: "rgba(255,255,255,0.15)",
+                  transform: "translateX(-4px)" 
+                },
               }}
             >
-              <ArrowBack />
+              <ArrowBack fontSize="small" />
             </IconButton>
             <Box>
-              <Typography variant="h4" fontWeight={700} color="white">
+              <Typography 
+                variant={isMobile ? "h5" : "h4"} 
+                fontWeight={800} 
+                color="white"
+                sx={{ letterSpacing: "-0.02em" }}
+              >
                 Financial Vehicles Hub
               </Typography>
-              <Typography variant="body2" color="rgba(255,255,255,0.7)">
+              <Typography variant="body1" sx={{ color: "rgba(255,255,255,0.6)", mt: 0.5 }}>
                 Manage, compare, and calculate your financial plans
               </Typography>
             </Box>
-          </Box>
+          </Stack>
         </Box>
 
-        {/* Tab Navigation */}
-        <Box
+        {/* Main Interface Wrapper */}
+        <Paper
+          elevation={0}
           sx={{
-            bgcolor: "white",
-            borderRadius: "12px 12px 0 0",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            borderRadius: 4,
+            overflow: "hidden",
+            bgcolor: "transparent",
+            border: "1px solid rgba(255,255,255,0.1)",
           }}
         >
-          <Tabs
-            value={activeTab}
-            onChange={handleTabChange}
+          {/* Tab Navigation */}
+          <Box
             sx={{
-              px: 2,
-              "& .MuiTab-root": {
-                textTransform: "none",
-                fontWeight: 600,
-                fontSize: "1rem",
-                minHeight: 64,
-              },
-              "& .Mui-selected": {
-                color: colors.primary,
-              },
+              bgcolor: "rgba(255, 255, 255, 0.03)",
+              borderBottom: "1px solid rgba(255,255,255,0.1)",
+              px: { xs: 1, sm: 3 },
             }}
           >
-            <Tab label="My Current Plans" />
-            <Tab label="Comparative Matrix" />
-            <Tab label="Plan Calculator" />
-          </Tabs>
-        </Box>
+            <Tabs
+              value={activeTab}
+              onChange={handleTabChange}
+              variant={isMobile ? "scrollable" : "standard"}
+              scrollButtons="auto"
+              sx={{
+                "& .MuiTabs-indicator": {
+                  height: 3,
+                  borderRadius: "3px 3px 0 0",
+                  bgcolor: colors.accent,
+                },
+                "& .MuiTab-root": {
+                  textTransform: "none",
+                  fontWeight: 600,
+                  fontSize: "0.95rem",
+                  minHeight: 72,
+                  color: "rgba(255,255,255,0.5)",
+                  transition: "color 0.2s",
+                  "&.Mui-selected": {
+                    color: colors.accent,
+                  },
+                },
+              }}
+            >
+              <Tab label="My Current Plans" />
+              <Tab label="Comparative Matrix" />
+              <Tab label="Plan Calculator" />
+            </Tabs>
+          </Box>
 
-        {/* Tab Content */}
-        <Box
-          sx={{
-            bgcolor: "white",
-            borderRadius: "0 0 12px 12px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-            minHeight: "60vh",
-          }}
-        >
-          {activeTab === 0 && <MyPlansSection />}
-          {activeTab === 1 && <ComparativeMatrixSection />}
-          {activeTab === 2 && <CalculatorSection />}
-        </Box>
+          {/* Tab Content Area */}
+          <Box
+            sx={{
+              bgcolor: colors.surface,
+              p: { xs: 2, sm: 4 },
+              minHeight: "60vh",
+              position: "relative",
+            }}
+          >
+            <Fade in={true} timeout={400} key={activeTab}>
+              <Box>
+                {activeTab === 0 && <MyPlansSection />}
+                {activeTab === 1 && <ComparativeMatrixSection />}
+                {activeTab === 2 && <CalculatorSection />}
+              </Box>
+            </Fade>
+          </Box>
+        </Paper>
       </Container>
     </Box>
   );

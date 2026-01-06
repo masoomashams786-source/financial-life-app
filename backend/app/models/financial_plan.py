@@ -25,6 +25,7 @@ class FinancialPlan(db.Model):
     income_start_age: Mapped[int] = mapped_column(Integer, nullable=True)
     income_end_age: Mapped[int] = mapped_column(Integer, nullable=True)
     
+    income_rate: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     # User's current age (for calculations)
     user_current_age: Mapped[int] = mapped_column(Integer, nullable=True)
     

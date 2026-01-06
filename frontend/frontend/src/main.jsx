@@ -1,15 +1,18 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter } from "react-router-dom"; // <-- add this
+import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
-import { AuthProvider } from "./auth/AuthContext.jsx"; // make sure the casing is correct
+import { AuthProvider } from "./auth/AuthContext.jsx";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";  
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
+      <ErrorBoundary>  
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </ErrorBoundary>
     </BrowserRouter>
   </StrictMode>
 );

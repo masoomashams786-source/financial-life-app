@@ -10,6 +10,8 @@ import {
   Divider,
   CircularProgress,
   Alert,
+  Stack,
+  alpha,
 } from "@mui/material";
 import {
   AccountBalance,
@@ -20,14 +22,19 @@ import {
 import { financialPlansFetcher } from "../api/financialPlans";
 
 export default function FinancialPlansCard() {
-  const { data: summary, error, isLoading } = useSWR("/financial-plans/summary", financialPlansFetcher);
+  const {
+    data: summary,
+    error,
+    isLoading,
+  } = useSWR("/financial-plans/summary", financialPlansFetcher);
   const navigate = useNavigate();
 
   const colors = {
     primary: "#0A2540",
     accent: "#00D4FF",
     success: "#10B981",
-    border: "#E6E9F0",
+    border: "#f1f5f9",
+    surface: "#ffffff",
   };
 
   const formatCurrency = (value) => {
@@ -40,11 +47,9 @@ export default function FinancialPlansCard() {
 
   if (isLoading) {
     return (
-      <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
-        <CardContent>
-          <Box display="flex" justifyContent="center" py={4}>
-            <CircularProgress />
-          </Box>
+      <Card sx={{ borderRadius: 4, border: `1px solid ${colors.border}`, height: '100%' }}>
+        <CardContent sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
+          <CircularProgress size={32} thickness={5} sx={{ color: colors.accent }} />
         </CardContent>
       </Card>
     );
@@ -52,9 +57,11 @@ export default function FinancialPlansCard() {
 
   if (error) {
     return (
-      <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
+      <Card sx={{ borderRadius: 4, border: `1px solid ${colors.border}` }}>
         <CardContent>
-          <Alert severity="error">Failed to load plans</Alert>
+          <Alert severity="error" variant="outlined" sx={{ borderRadius: 2 }}>
+            Failed to load plans
+          </Alert>
         </CardContent>
       </Card>
     );
@@ -63,167 +70,186 @@ export default function FinancialPlansCard() {
   return (
     <Card
       sx={{
-        borderRadius: 3,
-        boxShadow: "0 4px 12px rgba(10, 37, 64, 0.08)",
+        borderRadius: 4,
+        boxShadow: "0 12px 24px -10px rgba(10, 37, 64, 0.1)",
         border: `1px solid ${colors.border}`,
+        bgcolor: colors.surface,
+        transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+        "&:hover": {
+          transform: "translateY(-4px)",
+          boxShadow: "0 20px 32px -12px rgba(10, 37, 64, 0.15)",
+        },
       }}
     >
-      <CardContent sx={{ p: 3 }}>
+      <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
         {/* Header */}
-        <Box display="flex" alignItems="center" gap={1} mb={3}>
+        <Box display="flex" alignItems="center" gap={1.5} mb={3}>
           <Box
             sx={{
-              width: 8,
-              height: 32,
-              bgcolor: colors.success,
-              borderRadius: 1,
+              width: 6,
+              height: 24,
+              bgcolor: colors.accent,
+              borderRadius: 3,
             }}
           />
-          <Typography variant="h6" fontWeight={700} color={colors.primary}>
+          <Typography variant="h6" fontWeight={800} sx={{ color: colors.primary, letterSpacing: "-0.01em" }}>
             Financial Plans
           </Typography>
         </Box>
 
-        {/* Summary Stats */}
         {summary && summary.total_plans > 0 ? (
           <Box>
-            <Box display="flex" gap={2} mb={3}>
-              {/* Total Value */}
+            {/* Summary Stats */}
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} mb={3}>
               <Box
                 flex={1}
                 sx={{
-                  bgcolor: "#F0F9FF",
+                  bgcolor: alpha(colors.accent, 0.04),
                   p: 2,
-                  borderRadius: 2,
-                  border: "1px solid #BAE6FD",
+                  borderRadius: 3,
+                  border: `1px solid ${alpha(colors.accent, 0.1)}`,
                 }}
               >
-                <Box display="flex" alignItems="center" gap={1} mb={1}>
-                  <AccountBalance sx={{ fontSize: 20, color: colors.accent }} />
-                  <Typography variant="caption" color="text.secondary">
+                <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
+                  <AccountBalance sx={{ fontSize: 16, color: colors.accent }} />
+                  <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Total Value
                   </Typography>
-                </Box>
-                <Typography variant="h6" fontWeight={700} color={colors.primary}>
+                </Stack>
+                <Typography variant="h5" fontWeight={800} color={colors.primary}>
                   {formatCurrency(summary.total_value)}
                 </Typography>
               </Box>
 
-              {/* Active Plans */}
               <Box
                 flex={1}
                 sx={{
-                  bgcolor: "#F0FDF4",
+                  bgcolor: alpha(colors.success, 0.04),
                   p: 2,
-                  borderRadius: 2,
-                  border: "1px solid #BBF7D0",
+                  borderRadius: 3,
+                  border: `1px solid ${alpha(colors.success, 0.1)}`,
                 }}
               >
-                <Box display="flex" alignItems="center" gap={1} mb={1}>
-                  <TrendingUp sx={{ fontSize: 20, color: colors.success }} />
-                  <Typography variant="caption" color="text.secondary">
-                    Active Plans
+                <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
+                  <TrendingUp sx={{ fontSize: 16, color: colors.success }} />
+                  <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Active
                   </Typography>
-                </Box>
-                <Typography variant="h6" fontWeight={700} color={colors.primary}>
+                </Stack>
+                <Typography variant="h5" fontWeight={800} color={colors.primary}>
                   {summary.total_plans}
                 </Typography>
               </Box>
-            </Box>
+            </Stack>
 
-            <Divider sx={{ mb: 2 }} />
+            <Divider sx={{ mb: 3, opacity: 0.6 }} />
 
             {/* Plan List */}
-            <Box display="flex" flexDirection="column" gap={1} mb={2}>
+            <Stack spacing={1.5} mb={3}>
               {summary.plans.slice(0, 3).map((plan) => (
                 <Box
                   key={plan.id}
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
                   sx={{
-                    p: 1.5,
-                    bgcolor: "#F7F9FC",
-                    borderRadius: 1,
+                    p: 2,
+                    bgcolor: "#f8fafc",
+                    borderRadius: 2,
+                    border: "1px solid #edf2f7",
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 0.5,
                   }}
                 >
-                  <Box>
-                    <Typography variant="body2" fontWeight={600}>
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Typography variant="subtitle2" fontWeight={700} color={colors.primary}>
                       {plan.plan_type}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {formatCurrency(plan.current_value)}
-                    </Typography>
+                    <Chip
+                      label="Active"
+                      size="small"
+                      sx={{
+                        bgcolor: alpha(colors.success, 0.1),
+                        color: colors.success,
+                        fontWeight: 700,
+                        fontSize: "0.65rem",
+                        height: 20,
+                        borderRadius: 1,
+                      }}
+                    />
                   </Box>
-                  <Chip
-                    label="Active"
-                    size="small"
-                    sx={{
-                      bgcolor: colors.success,
-                      color: "white",
-                      fontWeight: 600,
-                      fontSize: "0.7rem",
-                    }}
-                  />
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Cash Value: <Box component="span" fontWeight={700} color="text.primary">{formatCurrency(plan.cash_value)}</Box>
+                    </Typography>
+                    {plan.income_rate > 0 && (
+                      <Typography variant="caption" color={colors.success} display="block" fontWeight={600}>
+                        Yields {formatCurrency(plan.income_rate)}/yr from age {plan.income_start_age}
+                      </Typography>
+                    )}
+                  </Box>
                 </Box>
               ))}
               {summary.total_plans > 3 && (
-                <Typography variant="caption" color="text.secondary" textAlign="center">
-                  +{summary.total_plans - 3} more plans
+                <Typography variant="caption" color="text.secondary" textAlign="center" sx={{ pt: 1, fontWeight: 500 }}>
+                  + {summary.total_plans - 3} additional plans in portfolio
                 </Typography>
               )}
-            </Box>
+            </Stack>
 
-            {/* View All Button */}
             <Button
               fullWidth
               variant="contained"
+              disableElevation
               endIcon={<ArrowForward />}
               onClick={() => navigate("/financial-vehicles")}
               sx={{
-                py: 1.5,
+                py: 1.8,
                 bgcolor: colors.primary,
-                borderRadius: 2,
+                borderRadius: 3,
                 textTransform: "none",
-                fontWeight: 600,
+                fontWeight: 700,
+                fontSize: "0.95rem",
                 "&:hover": {
-                  bgcolor: "#0d2f4f",
+                  bgcolor: "#1a365d",
                 },
               }}
             >
-              Manage All Vehicles
+              Manage Portfolio
             </Button>
           </Box>
         ) : (
-          // No plans yet
-          <Box textAlign="center" py={4}>
-            <AddCircleOutline
+          /* Empty State */
+          <Box textAlign="center" py={6}>
+            <Box
               sx={{
-                fontSize: 64,
-                color: colors.border,
-                mb: 2,
-              }}
-            />
-            <Typography variant="body1" color="text.secondary" mb={1}>
-              No financial plans yet
-            </Typography>
-            <Typography variant="caption" color="text.secondary" display="block" mb={3}>
-              Use the Calculator to run projections
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddCircleOutline />}
-              onClick={() => navigate("/financial-vehicles")}
-              sx={{
-                bgcolor: colors.primary,
-                textTransform: "none",
-                fontWeight: 600,
-                "&:hover": {
-                  bgcolor: "#0d2f4f",
-                },
+                display: 'inline-flex',
+                p: 2,
+                borderRadius: '50%',
+                bgcolor: '#f1f5f9',
+                mb: 2
               }}
             >
-              Explore Financial Vehicles
+              <AddCircleOutline sx={{ fontSize: 40, color: "#cbd5e1" }} />
+            </Box>
+            <Typography variant="h6" fontWeight={700} color={colors.primary} gutterBottom>
+              Start Planning
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 4, maxWidth: 200, mx: 'auto' }}>
+              You haven't added any financial vehicles yet.
+            </Typography>
+            <Button
+              variant="outlined"
+              onClick={() => navigate("/financial-vehicles")}
+              sx={{
+                borderRadius: 2,
+                textTransform: "none",
+                fontWeight: 700,
+                px: 4,
+                borderColor: colors.primary,
+                color: colors.primary,
+                "&:hover": { borderColor: "#1a365d", bgcolor: alpha(colors.primary, 0.04) }
+              }}
+            >
+              Explore Vehicles
             </Button>
           </Box>
         )}

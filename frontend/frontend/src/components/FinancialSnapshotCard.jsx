@@ -8,6 +8,8 @@ import {
   CircularProgress,
   Alert,
   Paper,
+  Stack,
+  alpha,
 } from "@mui/material";
 import {
   AccountBalanceWallet,
@@ -27,14 +29,13 @@ export default function FinancialSnapshotCard() {
   const [error, setError] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
 
-  // Premium Financial Palette
   const colors = {
     primary: "#0A2540",
     accent: "#00D4FF",
     success: "#10B981",
     warning: "#F59E0B",
     danger: "#EF4444",
-    border: "rgba(0, 0, 0, 0.06)",
+    border: "#f1f5f9",
     surface: "#FFFFFF",
     softBg: "#F8FAFC",
   };
@@ -114,7 +115,7 @@ export default function FinancialSnapshotCard() {
   if (loading) {
     return (
       <Card sx={{ borderRadius: 4, border: `1px solid ${colors.border}`, boxShadow: 'none' }}>
-        <CardContent sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+        <CardContent sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 10 }}>
           <CircularProgress thickness={5} size={40} sx={{ color: colors.accent }} />
         </CardContent>
       </Card>
@@ -125,18 +126,28 @@ export default function FinancialSnapshotCard() {
     <>
       <Card
         sx={{
-          borderRadius: 5,
-          boxShadow: "0 20px 40px rgba(0,0,0,0.04)",
+          borderRadius: 4,
+          boxShadow: "0 12px 24px -10px rgba(10, 37, 64, 0.1)",
           border: `1px solid ${colors.border}`,
-          overflow: "visible",
           bgcolor: colors.surface,
+          overflow: "visible",
         }}
       >
-        <CardContent sx={{ p: { xs: 2, md: 4 } }}>
+        <CardContent sx={{ p: { xs: 2.5, md: 4 } }}>
           {/* Header Section */}
-          <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={4}>
+          <Stack 
+            direction={{ xs: "column", sm: "row" }} 
+            justifyContent="space-between" 
+            alignItems={{ xs: "flex-start", sm: "center" }} 
+            spacing={2} 
+            mb={4}
+          >
             <Box>
-              <Typography variant="h5" fontWeight={800} sx={{ color: colors.primary, letterSpacing: "-0.5px" }}>
+              <Typography 
+                variant="h6" 
+                fontWeight={800} 
+                sx={{ color: colors.primary, letterSpacing: "-0.02em", lineHeight: 1.2 }}
+              >
                 Financial Snapshot
               </Typography>
               <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
@@ -145,20 +156,21 @@ export default function FinancialSnapshotCard() {
             </Box>
             <Button
               onClick={() => setModalOpen(true)}
-              variant="outlined"
+              variant="contained"
+              disableElevation
               startIcon={<Edit sx={{ fontSize: 16 }} />}
               sx={{
-                borderRadius: "10px",
+                borderRadius: 2,
                 textTransform: "none",
                 fontWeight: 700,
-                borderColor: colors.border,
-                color: colors.primary,
-                "&:hover": { bgcolor: colors.softBg, borderColor: colors.primary },
+                bgcolor: colors.primary,
+                px: 3,
+                "&:hover": { bgcolor: "#1a365d" },
               }}
             >
               Update
             </Button>
-          </Box>
+          </Stack>
 
           {error && (
             <Alert severity="error" variant="outlined" sx={{ mb: 3, borderRadius: 2 }}>
@@ -166,11 +178,11 @@ export default function FinancialSnapshotCard() {
             </Alert>
           )}
 
-          {/* Grid Layout for Items */}
+          {/* Responsive Grid Layout */}
           <Box 
             display="grid" 
             gridTemplateColumns={{ xs: "1fr", sm: "1fr 1fr" }} 
-            gap={2.5}
+            gap={2}
           >
             {snapshotItems.map((item, index) => (
               <Paper
@@ -182,44 +194,60 @@ export default function FinancialSnapshotCard() {
                   bgcolor: colors.softBg,
                   border: "1px solid transparent",
                   transition: "all 0.2s ease-in-out",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 2,
                   "&:hover": {
                     bgcolor: "#FFFFFF",
-                    borderColor: item.color,
-                    boxShadow: `0 10px 20px -10px ${item.color}30`,
+                    borderColor: alpha(item.color, 0.3),
+                    boxShadow: `0 8px 16px ${alpha(item.color, 0.08)}`,
                     transform: "translateY(-2px)"
                   }
                 }}
               >
-                <Box display="flex" alignItems="center" gap={2}>
-                  <Box
-                    sx={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: "12px",
-                      bgcolor: "#FFFFFF",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: "0 4px 10px rgba(0,0,0,0.03)",
-                      color: item.color,
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "10px",
+                    bgcolor: "#FFFFFF",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                    color: item.color,
+                    flexShrink: 0,
+                  }}
+                >
+                  {item.icon}
+                </Box>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      color: "text.secondary", 
+                      fontWeight: 700, 
+                      textTransform: "uppercase", 
+                      fontSize: 10, 
+                      letterSpacing: "0.05em",
+                      display: "block"
                     }}
                   >
-                    {item.icon}
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600, textTransform: "uppercase", fontSize: 10, letterSpacing: 0.5 }}>
-                      {item.label}
+                    {item.label}
+                  </Typography>
+                  <Box display="flex" alignItems="baseline" gap={0.5}>
+                    <Typography 
+                      variant="body1" 
+                      fontWeight={800} 
+                      sx={{ color: colors.primary, overflow: 'hidden', textOverflow: 'ellipsis' }}
+                    >
+                      {formatCurrency(item.value)}
                     </Typography>
-                    <Box display="flex" alignItems="baseline" gap={0.5}>
-                      <Typography variant="h6" fontWeight={800} sx={{ color: colors.primary, lineHeight: 1.2 }}>
-                        {formatCurrency(item.value)}
+                    {item.suffix && (
+                      <Typography variant="caption" fontWeight={600} color="text.secondary">
+                        {item.suffix}
                       </Typography>
-                      {item.suffix && (
-                        <Typography variant="caption" fontWeight={600} color="text.secondary">
-                          {item.suffix}
-                        </Typography>
-                      )}
-                    </Box>
+                    )}
                   </Box>
                 </Box>
               </Paper>

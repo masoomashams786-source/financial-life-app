@@ -11,8 +11,17 @@ import {
   Alert,
   CircularProgress,
   Grid,
+  Typography,
+  Divider,
+  IconButton,
+  InputAdornment,
+  Chip,
 } from "@mui/material";
-import { createFinancialPlan, updateFinancialPlan } from "../../api/financialPlans";
+import { Close, Save, TrendingUp } from "@mui/icons-material";
+import {
+  createFinancialPlan,
+  updateFinancialPlan,
+} from "../../api/financialPlans";
 
 const PLAN_TYPES = [
   "Max-Funded IUL",
@@ -30,7 +39,21 @@ const PLAN_TYPES = [
   "Other",
 ];
 
-export default function PlanFormModal({ open, onClose, plan, onSuccess }) {
+const SINGLE_PLAN_LIMIT = [
+  "Roth IRA",
+  "Traditional 401k",
+  "Roth 401k",
+  "Solo 401k",
+  "HSA",
+];
+
+export default function PlanFormModal({
+  open,
+  onClose,
+  plan,
+  onSuccess,
+  existingPlans = [],
+}) {
   const [formData, setFormData] = useState({
     plan_type: "",
     current_value: "",
@@ -41,14 +64,21 @@ export default function PlanFormModal({ open, onClose, plan, onSuccess }) {
     income_start_age: "",
     income_end_age: "",
     user_current_age: "",
+    income_rate: "",
     notes: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [calculatedCashValue, setCalculatedCashValue] = useState(0);
+
+  const colors = {
+    primary: "#0A2540",
+    accent: "#00D4FF",
+    border: "#f1f5f9",
+  };
 
   useEffect(() => {
     if (plan) {
-      // Editing existing plan
       setFormData({
         plan_type: plan.plan_type || "",
         current_value: plan.current_value || "",
@@ -59,10 +89,10 @@ export default function PlanFormModal({ open, onClose, plan, onSuccess }) {
         income_start_age: plan.income_start_age || "",
         income_end_age: plan.income_end_age || "",
         user_current_age: plan.user_current_age || "",
+        income_rate: plan.income_rate || "",
         notes: plan.notes || "",
       });
     } else {
-      // Reset for new plan
       setFormData({
         plan_type: "",
         current_value: "",
@@ -73,10 +103,24 @@ export default function PlanFormModal({ open, onClose, plan, onSuccess }) {
         income_start_age: "",
         income_end_age: "",
         user_current_age: "",
+        income_rate: "",
         notes: "",
       });
     }
   }, [plan, open]);
+
+  useEffect(() => {
+    const total = parseFloat(formData.total_contribution_amount) || 0;
+    const interestRate = 0.05;
+    const years = parseFloat(formData.years_to_contribute) || 0;
+
+    if (total > 0 && years > 0) {
+      const futureValue = total * Math.pow(1 + interestRate, years);
+      setCalculatedCashValue(futureValue);
+    } else {
+      setCalculatedCashValue(0);
+    }
+  }, [formData.total_contribution_amount, formData.years_to_contribute]);
 
   const handleChange = (e) => {
     setFormData({
@@ -85,13 +129,54 @@ export default function PlanFormModal({ open, onClose, plan, onSuccess }) {
     });
   };
 
+  const validateForm = () => {
+    if (SINGLE_PLAN_LIMIT.includes(formData.plan_type)) {
+      const hasDuplicate = existingPlans.some(
+        (p) => p.plan_type === formData.plan_type && (!plan || p.id !== plan.id)
+      );
+
+      if (hasDuplicate) {
+        return `You can only have one ${formData.plan_type} plan. You already have this plan in your account.`;
+      }
+    }
+
+    if (!formData.plan_type) return "Plan type is required";
+    if (!formData.current_value) return "Current value is required";
+    if (!formData.cash_value) return "Cash value is required";
+    if (!formData.monthly_contribution) return "Monthly contribution is required";
+    if (!formData.years_to_contribute) return "Years to contribute is required";
+    if (!formData.user_current_age) return "Current age is required";
+    if (!formData.income_start_age) return "Income start age is required";
+    if (!formData.income_end_age) return "Income end age is required";
+    if (!formData.income_rate) return "Income rate is required";
+
+    const currentAge = parseInt(formData.user_current_age);
+    const incomeStartAge = parseInt(formData.income_start_age);
+    const incomeEndAge = parseInt(formData.income_end_age);
+
+    if (incomeStartAge <= currentAge) {
+      return "Income start age must be greater than current age";
+    }
+    if (incomeEndAge <= incomeStartAge) {
+      return "Income end age must be greater than income start age";
+    }
+
+    return null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      // Convert strings to numbers
       const payload = {
         plan_type: formData.plan_type,
         current_value: parseFloat(formData.current_value) || 0,
@@ -99,9 +184,10 @@ export default function PlanFormModal({ open, onClose, plan, onSuccess }) {
         monthly_contribution: parseFloat(formData.monthly_contribution) || 0,
         total_contribution_amount: parseFloat(formData.total_contribution_amount) || 0,
         years_to_contribute: parseInt(formData.years_to_contribute) || 0,
-        income_start_age: parseInt(formData.income_start_age) || null,
-        income_end_age: parseInt(formData.income_end_age) || null,
-        user_current_age: parseInt(formData.user_current_age) || null,
+        income_start_age: parseInt(formData.income_start_age),
+        income_end_age: parseInt(formData.income_end_age),
+        user_current_age: parseInt(formData.user_current_age),
+        income_rate: parseFloat(formData.income_rate) || 0,
         notes: formData.notes,
       };
 
@@ -119,19 +205,58 @@ export default function PlanFormModal({ open, onClose, plan, onSuccess }) {
     }
   };
 
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <form onSubmit={handleSubmit}>
-        <DialogTitle>{plan ? "Edit Plan" : "Add New Plan"}</DialogTitle>
+  const useSuggestedCashValue = () => {
+    setFormData({
+      ...formData,
+      cash_value: calculatedCashValue.toFixed(2),
+    });
+  };
 
-        <DialogContent dividers>
+  return (
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="md" 
+      fullWidth
+      PaperProps={{
+        sx: { borderRadius: 4, boxShadow: "0 24px 48px rgba(0,0,0,0.2)" }
+      }}
+    >
+      <DialogTitle sx={{ 
+        m: 0, 
+        p: 3, 
+        display: "flex", 
+        justifyContent: "space-between", 
+        alignItems: "center",
+        bgcolor: colors.primary,
+        color: "white"
+      }}>
+        <Box>
+          <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>
+            {plan ? "Edit Financial Plan" : "Add New Financial Plan"}
+          </Typography>
+          <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.6)", fontWeight: 500 }}>
+            {plan ? "Update your plan details" : "Create a comprehensive financial strategy"}
+          </Typography>
+        </Box>
+        <IconButton 
+          onClick={onClose} 
+          sx={{ color: "white", "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}
+        >
+          <Close />
+        </IconButton>
+      </DialogTitle>
+
+      <form onSubmit={handleSubmit}>
+        <DialogContent sx={{ p: 4, bgcolor: "#fafafa" }}>
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert severity="error" variant="filled" sx={{ mb: 3, borderRadius: 2 }}>
               {error}
             </Alert>
           )}
 
-          <Grid container spacing={2}>
+          <Grid container spacing={3}>
+            {/* Plan Type */}
             <Grid item xs={12}>
               <TextField
                 select
@@ -141,15 +266,81 @@ export default function PlanFormModal({ open, onClose, plan, onSuccess }) {
                 value={formData.plan_type}
                 onChange={handleChange}
                 required
+                InputProps={{
+                  sx: { borderRadius: 2, bgcolor: "white" }
+                }}
+                helperText={
+                  SINGLE_PLAN_LIMIT.includes(formData.plan_type)
+                    ? "⚠️ You can only have ONE of this plan type (legal limit)"
+                    : "You can have multiple of this plan type"
+                }
               >
                 {PLAN_TYPES.map((type) => (
                   <MenuItem key={type} value={type}>
                     {type}
+                    {SINGLE_PLAN_LIMIT.includes(type) && (
+                      <Chip 
+                        label="Single" 
+                        size="small" 
+                        sx={{ ml: 1, height: 20, fontSize: "0.7rem" }}
+                      />
+                    )}
                   </MenuItem>
                 ))}
               </TextField>
             </Grid>
 
+            <Grid item xs={12}>
+              <Divider sx={{ my: 1 }}>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
+                  Personal Information
+                </Typography>
+              </Divider>
+            </Grid>
+
+            {/* Current Age */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Your Current Age"
+                name="user_current_age"
+                type="number"
+                value={formData.user_current_age}
+                onChange={handleChange}
+                required
+                helperText="Your age today"
+                InputProps={{
+                  sx: { borderRadius: 2, bgcolor: "white" }
+                }}
+              />
+            </Grid>
+
+            {/* Years to Contribute */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Years to Contribute"
+                name="years_to_contribute"
+                type="number"
+                value={formData.years_to_contribute}
+                onChange={handleChange}
+                required
+                helperText="How many years will you contribute?"
+                InputProps={{
+                  sx: { borderRadius: 2, bgcolor: "white" }
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Divider sx={{ my: 1 }}>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
+                  Financial Details
+                </Typography>
+              </Divider>
+            </Grid>
+
+            {/* Current Value */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -159,20 +350,19 @@ export default function PlanFormModal({ open, onClose, plan, onSuccess }) {
                 value={formData.current_value}
                 onChange={handleChange}
                 required
+                helperText="Current worth of the plan"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Typography sx={{ color: "text.secondary", fontWeight: 700 }}>$</Typography>
+                    </InputAdornment>
+                  ),
+                  sx: { borderRadius: 2, bgcolor: "white" }
+                }}
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Cash Value"
-                name="cash_value"
-                type="number"
-                value={formData.cash_value}
-                onChange={handleChange}
-              />
-            </Grid>
-
+            {/* Monthly Contribution */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -181,9 +371,20 @@ export default function PlanFormModal({ open, onClose, plan, onSuccess }) {
                 type="number"
                 value={formData.monthly_contribution}
                 onChange={handleChange}
+                required
+                helperText="Amount per month"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Typography sx={{ color: "text.secondary", fontWeight: 700 }}>$</Typography>
+                    </InputAdornment>
+                  ),
+                  sx: { borderRadius: 2, bgcolor: "white" }
+                }}
               />
             </Grid>
 
+            {/* Total Contribution Amount */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -192,32 +393,67 @@ export default function PlanFormModal({ open, onClose, plan, onSuccess }) {
                 type="number"
                 value={formData.total_contribution_amount}
                 onChange={handleChange}
+                helperText="Sum of all contributions"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Typography sx={{ color: "text.secondary", fontWeight: 700 }}>$</Typography>
+                    </InputAdornment>
+                  ),
+                  sx: { borderRadius: 2, bgcolor: "white" }
+                }}
               />
             </Grid>
 
+            {/* Cash Value */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Years to Contribute"
-                name="years_to_contribute"
+                label="Whole Cash Value"
+                name="cash_value"
                 type="number"
-                value={formData.years_to_contribute}
+                value={formData.cash_value}
                 onChange={handleChange}
+                required
+                helperText="Total contribution + interest - costs"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Typography sx={{ color: "text.secondary", fontWeight: 700 }}>$</Typography>
+                    </InputAdornment>
+                  ),
+                  sx: { borderRadius: 2, bgcolor: "white" }
+                }}
               />
+              {calculatedCashValue > 0 && (
+                <Button
+                  size="small"
+                  onClick={useSuggestedCashValue}
+                  startIcon={<TrendingUp />}
+                  sx={{ 
+                    mt: 1, 
+                    textTransform: "none", 
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    color: colors.accent,
+                    "&:hover": { bgcolor: "rgba(0, 212, 255, 0.08)" }
+                  }}
+                >
+                  Use suggested: ${calculatedCashValue.toFixed(0)}
+                </Button>
+              )}
             </Grid>
 
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Your Current Age"
-                name="user_current_age"
-                type="number"
-                value={formData.user_current_age}
-                onChange={handleChange}
-              />
+            <Grid item xs={12}>
+              <Divider sx={{ my: 1 }}>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
+                  Income Withdrawal Details
+                </Typography>
+              </Divider>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            {/* Income Start Age */}
+            <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
                 label="Income Start Age"
@@ -225,10 +461,16 @@ export default function PlanFormModal({ open, onClose, plan, onSuccess }) {
                 type="number"
                 value={formData.income_start_age}
                 onChange={handleChange}
+                required
+                helperText="Age to start withdrawals"
+                InputProps={{
+                  sx: { borderRadius: 2, bgcolor: "white" }
+                }}
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            {/* Income End Age */}
+            <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
                 label="Income End Age"
@@ -236,34 +478,80 @@ export default function PlanFormModal({ open, onClose, plan, onSuccess }) {
                 type="number"
                 value={formData.income_end_age}
                 onChange={handleChange}
+                required
+                helperText="Age to stop withdrawals"
+                InputProps={{
+                  sx: { borderRadius: 2, bgcolor: "white" }
+                }}
               />
             </Grid>
 
+            {/* Income Rate */}
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                label="Annual Income Rate"
+                name="income_rate"
+                type="number"
+                value={formData.income_rate}
+                onChange={handleChange}
+                required
+                helperText="$ per year from policy"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Typography sx={{ color: "text.secondary", fontWeight: 700 }}>$</Typography>
+                    </InputAdornment>
+                  ),
+                  sx: { borderRadius: 2, bgcolor: "white" }
+                }}
+              />
+            </Grid>
+
+            {/* Notes */}
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Notes"
+                label="Notes (Optional)"
                 name="notes"
                 multiline
                 rows={3}
                 value={formData.notes}
                 onChange={handleChange}
+                helperText="Additional details about this plan"
+                InputProps={{
+                  sx: { borderRadius: 2, bgcolor: "white" }
+                }}
               />
             </Grid>
           </Grid>
         </DialogContent>
 
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={onClose} disabled={loading}>
+        <DialogActions sx={{ p: 3, bgcolor: "white", borderTop: `1px solid ${colors.border}` }}>
+          <Button 
+            onClick={onClose} 
+            disabled={loading}
+            sx={{ color: "text.secondary", fontWeight: 600, textTransform: "none" }}
+          >
             Cancel
           </Button>
           <Button
             type="submit"
             variant="contained"
             disabled={loading}
-            sx={{ minWidth: 100 }}
+            startIcon={!loading && <Save />}
+            sx={{ 
+              minWidth: 120, 
+              borderRadius: 2, 
+              py: 1,
+              textTransform: "none",
+              fontWeight: 700,
+              bgcolor: colors.primary,
+              boxShadow: "0 4px 12px rgba(10, 37, 64, 0.2)",
+              "&:hover": { bgcolor: "#1a365d" }
+            }}
           >
-            {loading ? <CircularProgress size={24} /> : plan ? "Update" : "Create"}
+            {loading ? <CircularProgress size={24} color="inherit" /> : (plan ? "Update Plan" : "Create Plan")}
           </Button>
         </DialogActions>
       </form>

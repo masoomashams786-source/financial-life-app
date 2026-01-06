@@ -29,20 +29,23 @@ class FinancialPlanSchema(ma.Schema):
     
     # Current status
     current_value = fields.Float(required=True, validate=validate.Range(min=0))
-    cash_value = fields.Float(validate=validate.Range(min=0))
+    cash_value = fields.Float(required=True, validate=validate.Range(min=0))  # Make required
     
     # Contribution details
-    monthly_contribution = fields.Float(validate=validate.Range(min=0))
+    monthly_contribution = fields.Float(required=True, validate=validate.Range(min=0))  # Make required
     total_contribution_amount = fields.Float(validate=validate.Range(min=0))
-    years_to_contribute = fields.Int(validate=validate.Range(min=0, max=100))
+    years_to_contribute = fields.Int(required=True, validate=validate.Range(min=0, max=100))  # Make required
     
     # Income withdrawal
-    income_start_age = fields.Int(validate=validate.Range(min=18, max=120))
-    income_end_age = fields.Int(validate=validate.Range(min=18, max=120))
-    user_current_age = fields.Int(validate=validate.Range(min=18, max=120))
+    income_start_age = fields.Int(required=True, validate=validate.Range(min=18, max=120))  # Make required
+    income_end_age = fields.Int(required=True, validate=validate.Range(min=18, max=120))  # Make required
+    user_current_age = fields.Int(required=True, validate=validate.Range(min=18, max=120))  # Make required
+    
+    # Income rate (NEW - make sure this is here)
+    income_rate = fields.Float(required=True, validate=validate.Range(min=0))  # Make required
     
     # Notes
-    notes = fields.Str(validate=validate.Length(max=1000))
+    notes = fields.Str(validate=validate.Length(max=1000), allow_none=True)
     
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)

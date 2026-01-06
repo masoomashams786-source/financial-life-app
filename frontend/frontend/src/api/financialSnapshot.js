@@ -1,21 +1,10 @@
 import api from "./axios";
 
-// Get user's financial snapshot
+// ✅ Simplified - no manual headers!
 export const getFinancialSnapshot = () => {
-  const token = localStorage.getItem("token");
-  return api.get("/financial-snapshot", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  return api.get("/financial-snapshot");
 };
 
-// Update user's financial snapshot
 export const updateFinancialSnapshot = (data) => {
-  const token = localStorage.getItem("token");
-  return api.post("/financial-snapshot", data, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  return api.post("/financial-snapshot", data);
 };

@@ -47,21 +47,31 @@ def create_plan():
     try:
         validated_data = financial_plan_schema.load(data)
         
-        # Check if plan type already exists for this user
-        existing_plan = FinancialPlan.query.filter_by(
-            user_id=int(user_id), 
-            plan_type=validated_data["plan_type"]
-        ).first()
+        # Check if plan type already exists for this user (only for single-plan types)
+        single_plan_types = ["Roth IRA", "Traditional 401k", "Roth 401k", "Solo 401k", "HSA"]
         
-        if existing_plan:
-            return jsonify({"error": f"{validated_data['plan_type']} plan already exists"}), 409
+        if validated_data["plan_type"] in single_plan_types:
+            existing_plan = FinancialPlan.query.filter_by(
+                user_id=int(user_id), 
+                plan_type=validated_data["plan_type"]
+            ).first()
+            
+            if existing_plan:
+                return jsonify({"error": f"{validated_data['plan_type']} plan already exists. You can only have one."}), 409
         
-        # Create new plan
+        # Create new plan with ALL fields
         plan = FinancialPlan(
             user_id=int(user_id),
             plan_type=validated_data["plan_type"],
             current_value=validated_data["current_value"],
-            monthly_contribution=validated_data.get("monthly_contribution", 0.0),
+            cash_value=validated_data["cash_value"],
+            monthly_contribution=validated_data["monthly_contribution"],
+            total_contribution_amount=validated_data.get("total_contribution_amount", 0.0),
+            years_to_contribute=validated_data["years_to_contribute"],
+            income_start_age=validated_data["income_start_age"],
+            income_end_age=validated_data["income_end_age"],
+            user_current_age=validated_data["user_current_age"],
+            income_rate=validated_data["income_rate"],  # Make sure this is included
             notes=validated_data.get("notes", "")
         )
         
@@ -75,6 +85,7 @@ def create_plan():
         
     except Exception as e:
         db.session.rollback()
+        print(f"Error creating plan: {str(e)}")  # Debug log
         return jsonify({"error": "Failed to create plan"}), 500
 
 
@@ -100,10 +111,17 @@ def update_plan(plan_id):
     try:
         validated_data = financial_plan_schema.load(data)
         
-        # Update fields
+        # Update ALL fields
         plan.plan_type = validated_data["plan_type"]
         plan.current_value = validated_data["current_value"]
-        plan.monthly_contribution = validated_data.get("monthly_contribution", 0.0)
+        plan.cash_value = validated_data["cash_value"]
+        plan.monthly_contribution = validated_data["monthly_contribution"]
+        plan.total_contribution_amount = validated_data.get("total_contribution_amount", 0.0)
+        plan.years_to_contribute = validated_data["years_to_contribute"]
+        plan.income_start_age = validated_data["income_start_age"]
+        plan.income_end_age = validated_data["income_end_age"]
+        plan.user_current_age = validated_data["user_current_age"]
+        plan.income_rate = validated_data["income_rate"]  # Make sure this is included
         plan.notes = validated_data.get("notes", "")
         
         db.session.commit()
@@ -115,6 +133,7 @@ def update_plan(plan_id):
         
     except Exception as e:
         db.session.rollback()
+        print(f"Error updating plan: {str(e)}")  # Debug log
         return jsonify({"error": "Failed to update plan"}), 500
 
 
