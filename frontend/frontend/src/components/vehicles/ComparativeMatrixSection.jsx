@@ -506,7 +506,7 @@ export default function ComparativeMatrixSection() {
   });
 
   return (
-    <Box sx={{ p: 4 }}>
+    <Box sx={{bgcolor: "#e4eaf0ff", p: 4 }}>
       {/* Header */}
       <Box mb={4}>
         <Typography variant="h5" fontWeight={700} gutterBottom>

@@ -319,7 +319,7 @@ export default function CalculatorSection() {
   };
 
   return (
-    <Box sx={{ p: 4 }}>
+    <Box   sx={{ bgcolor: "#e4eaf0ff",p: 4 }}>
       {/* Header */}
       <Box mb={4}>
         <Typography variant="h5" fontWeight={700} gutterBottom>
@@ -336,11 +336,13 @@ export default function CalculatorSection() {
         </Alert>
       </Box>
 
-      <Grid container spacing={4}>
+      <Box sx={{ display: 'grid', gap: 1, gridTemplateColumns: 'repeat(2, 1fr)' }}>
         {/* Left: Inputs */}
-        <Grid item xs={12} lg={5}>
+        <Grid item xs={6}>
+          
           <Card sx={{ boxShadow: 3 }}>
             <CardContent>
+              
               <Typography variant="h6" fontWeight={700} mb={2}>
                 Step 1: Select Plans to Compare
               </Typography>
@@ -587,10 +589,12 @@ export default function CalculatorSection() {
               )}
             </CardContent>
           </Card>
+          
         </Grid>
 
         {/* Right: Results */}
-        <Grid item xs={12} lg={7}>
+        <Grid item xs={6}>
+          
           <Card sx={{ boxShadow: 3, minHeight: 600 }}>
             <CardContent>
               {!results ? (
@@ -1044,8 +1048,9 @@ export default function CalculatorSection() {
               )}
             </CardContent>
           </Card>
+          
         </Grid>
-      </Grid>
+      </Box>
 
       {/* Save Confirmation Dialog */}
       <Dialog

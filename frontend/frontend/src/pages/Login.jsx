@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
-
 import {
   Box,
   Button,
@@ -25,6 +24,88 @@ import {
 import { loginUser } from "../api/auth";
 import { useAuth } from "../auth/useAuth";
 
+// ============================================
+// CONSTANTS
+// ============================================
+const VALIDATION = {
+  EMAIL_REGEX: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  MIN_PASSWORD_LENGTH: 6,
+  ERRORS: {
+    INVALID_EMAIL: "Please enter a valid email address",
+    INVALID_PASSWORD: "Password must be at least 6 characters",
+    NETWORK_ERROR: "Network error. Please check your connection",
+    TIMEOUT_ERROR: "Request timeout. Please try again",
+    GENERIC_ERROR: "Login failed. Please try again",
+  }
+};
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+/**
+ * Validates login form inputs
+ * @param {Object} form - Form data with email and password
+ * @returns {string|null} Error message or null if valid
+ */
+const validateLoginForm = (form) => {
+  if (!form.email.trim()) {
+    return "Email is required";
+  }
+  
+  if (!VALIDATION.EMAIL_REGEX.test(form.email)) {
+    return VALIDATION.ERRORS.INVALID_EMAIL;
+  }
+  
+  if (!form.password) {
+    return "Password is required";
+  }
+  
+  if (form.password.length < VALIDATION.MIN_PASSWORD_LENGTH) {
+    return VALIDATION.ERRORS.INVALID_PASSWORD;
+  }
+  
+  return null;
+};
+
+/**
+ * Extracts user-friendly error message from API error
+ * @param {Object} error - Axios error object
+ * @returns {string} User-friendly error message
+ */
+const getErrorMessage = (error) => {
+  // Network timeout
+  if (error.code === 'ECONNABORTED') {
+    return VALIDATION.ERRORS.TIMEOUT_ERROR;
+  }
+  
+  // No response (network error)
+  if (!error.response) {
+    return VALIDATION.ERRORS.NETWORK_ERROR;
+  }
+  
+  // HTTP 401 - Invalid credentials
+  if (error.response.status === 401) {
+    return "Invalid email or password";
+  }
+  
+  // HTTP 429 - Rate limit
+  if (error.response.status === 429) {
+    return "Too many attempts. Please try again later";
+  }
+  
+  // Server provided error message
+  if (error.response?.data?.error) {
+    return error.response.data.error;
+  }
+  
+  // Fallback
+  return VALIDATION.ERRORS.GENERIC_ERROR;
+};
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
@@ -35,36 +116,81 @@ export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  // ============================================
+  // EVENT HANDLERS
+  // ============================================
+  
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error when user starts typing
+    if (error) {
+      setError("");
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(form.email)) {
-      setError("Please enter a valid email address");
+    
+    //  Step 1: Client-side validation (before loading state)
+    const validationError = validateLoginForm(form);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
+    // Step 2: Set loading state for async operation
+    setLoading(true);
+
     try {
-      const res = await loginUser(form);
+      //  Step 3: API call
+      const res = await loginUser({
+        email: form.email.trim().toLowerCase(),
+        password: form.password
+      });
+      
+      //  Step 4: Validate response
+      if (!res.data?.access_token) {
+        throw new Error("Invalid response from server");
+      }
+      
+      // Step 5: Update auth context
       login(res.data.access_token);
-
+      
+      // Step 6: Show success feedback
       setOpenSnackbar(true);
-
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 1000);
+      
+      // Step 7: Navigate to dashboard
+      navigate("/dashboard", { replace: true });
+      
     } catch (err) {
-      setError(err.response?.data?.error || "Login failed");
+      // Step 8: Handle errors gracefully
+      const errorMessage = getErrorMessage(err);
+      setError(errorMessage);
+      
+      // Log for debugging (can integrate with Sentry/LogRocket in production)
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Login error:", err);
+      }
+      
     } finally {
+      //  Step 9: Always cleanup loading state
       setLoading(false);
     }
   };
 
+  const handleSnackbarClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setOpenSnackbar(false);
+  };
+
+  // ============================================
+  // RENDER
+  // ============================================
   return (
     <Box
       sx={{
@@ -87,6 +213,7 @@ export default function Login() {
             backdropFilter: "blur(10px)",
           }}
         >
+          {/* Header */}
           <Box textAlign="center" mb={4}>
             <Typography
               variant="h4"
@@ -101,13 +228,20 @@ export default function Login() {
             </Typography>
           </Box>
 
+          {/* Error Alert */}
           {error && (
-            <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+            <Alert 
+              severity="error" 
+              sx={{ mb: 3, borderRadius: 2 }}
+              onClose={() => setError("")}
+            >
               {error}
             </Alert>
           )}
 
+          {/* Login Form */}
           <Box component="form" onSubmit={handleSubmit} noValidate>
+            {/* Email Field */}
             <TextField
               fullWidth
               label="Email Address"
@@ -118,6 +252,8 @@ export default function Login() {
               onChange={handleChange}
               margin="normal"
               required
+              disabled={loading}
+              error={error && error.toLowerCase().includes('email')}
               slotProps={{
                 input: {
                   startAdornment: (
@@ -130,6 +266,7 @@ export default function Login() {
               sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
             />
 
+            {/* Password Field */}
             <TextField
               fullWidth
               label="Password"
@@ -140,6 +277,8 @@ export default function Login() {
               onChange={handleChange}
               margin="normal"
               required
+              disabled={loading}
+              error={error && error.toLowerCase().includes('password')}
               slotProps={{
                 input: {
                   startAdornment: (
@@ -152,6 +291,8 @@ export default function Login() {
                       <IconButton
                         onClick={() => setShowPassword(!showPassword)}
                         edge="end"
+                        disabled={loading}
+                        aria-label="toggle password visibility"
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
@@ -162,6 +303,7 @@ export default function Login() {
               sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
             />
 
+            {/* Submit Button */}
             <Button
               fullWidth
               type="submit"
@@ -185,9 +327,10 @@ export default function Login() {
               )}
             </Button>
 
+            {/* Sign Up Link */}
             <Box mt={3} textAlign="center">
               <Typography variant="body2" color="text.secondary">
-                Don’t have an account?{" "}
+                Don't have an account?{" "}
                 <Link
                   component={RouterLink}
                   to="/register"
@@ -202,15 +345,15 @@ export default function Login() {
         </Paper>
       </Container>
 
-      {/* ✅ Snackbar for success */}
+      {/* Success Snackbar */}
       <Snackbar
         open={openSnackbar}
         autoHideDuration={2000}
-        onClose={() => setOpenSnackbar(false)}
+        onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <MuiAlert
-          onClose={() => setOpenSnackbar(false)}
+          onClose={handleSnackbarClose}
           severity="success"
           sx={{ width: "100%" }}
           elevation={6}

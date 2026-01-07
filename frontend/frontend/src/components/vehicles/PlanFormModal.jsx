@@ -16,6 +16,8 @@ import {
   IconButton,
   InputAdornment,
   Chip,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 import { Close, Save, TrendingUp } from "@mui/icons-material";
 import {
@@ -66,6 +68,11 @@ export default function PlanFormModal({
     user_current_age: "",
     income_rate: "",
     notes: "",
+    // Employer match fields
+    employer_match_enabled: false,
+    user_annual_salary: "",
+    employer_match_percentage: 0,
+    employer_match_cap: 0,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -77,9 +84,11 @@ export default function PlanFormModal({
     border: "#f1f5f9",
   };
 
+  // Populate form on edit
   useEffect(() => {
     if (plan) {
       setFormData({
+        ...formData,
         plan_type: plan.plan_type || "",
         current_value: plan.current_value || "",
         cash_value: plan.cash_value || "",
@@ -91,6 +100,10 @@ export default function PlanFormModal({
         user_current_age: plan.user_current_age || "",
         income_rate: plan.income_rate || "",
         notes: plan.notes || "",
+        employer_match_enabled: plan.employer_match_enabled || false,
+        user_annual_salary: plan.user_annual_salary || "",
+        employer_match_percentage: plan.employer_match_percentage || 0,
+        employer_match_cap: plan.employer_match_cap || 0,
       });
     } else {
       setFormData({
@@ -105,10 +118,15 @@ export default function PlanFormModal({
         user_current_age: "",
         income_rate: "",
         notes: "",
+        employer_match_enabled: false,
+        user_annual_salary: "",
+        employer_match_percentage: 0,
+        employer_match_cap: 0,
       });
     }
   }, [plan, open]);
 
+  // Calculate suggested cash value
   useEffect(() => {
     const total = parseFloat(formData.total_contribution_amount) || 0;
     const interestRate = 0.05;
@@ -129,12 +147,29 @@ export default function PlanFormModal({
     });
   };
 
+  const calculateMatch = () => {
+    if (
+      !formData.employer_match_enabled ||
+      !formData.user_annual_salary ||
+      !formData.employer_match_percentage ||
+      !formData.employer_match_cap
+    )
+      return 0;
+
+    const annualContribution =
+      parseFloat(formData.monthly_contribution) * 12 || 0;
+    const employeeContributionRate = annualContribution / formData.user_annual_salary;
+    const matchedRate = Math.min(employeeContributionRate, formData.employer_match_cap);
+    const employerMatch =
+      formData.user_annual_salary * matchedRate * formData.employer_match_percentage;
+    return employerMatch;
+  };
+
   const validateForm = () => {
     if (SINGLE_PLAN_LIMIT.includes(formData.plan_type)) {
       const hasDuplicate = existingPlans.some(
         (p) => p.plan_type === formData.plan_type && (!plan || p.id !== plan.id)
       );
-
       if (hasDuplicate) {
         return `You can only have one ${formData.plan_type} plan. You already have this plan in your account.`;
       }
@@ -154,12 +189,8 @@ export default function PlanFormModal({
     const incomeStartAge = parseInt(formData.income_start_age);
     const incomeEndAge = parseInt(formData.income_end_age);
 
-    if (incomeStartAge <= currentAge) {
-      return "Income start age must be greater than current age";
-    }
-    if (incomeEndAge <= incomeStartAge) {
-      return "Income end age must be greater than income start age";
-    }
+    if (incomeStartAge <= currentAge) return "Income start age must be greater than current age";
+    if (incomeEndAge <= incomeStartAge) return "Income end age must be greater than income start age";
 
     return null;
   };
@@ -189,6 +220,11 @@ export default function PlanFormModal({
         user_current_age: parseInt(formData.user_current_age),
         income_rate: parseFloat(formData.income_rate) || 0,
         notes: formData.notes,
+        // Employer match
+        employer_match_enabled: formData.employer_match_enabled,
+        user_annual_salary: parseFloat(formData.user_annual_salary) || 0,
+        employer_match_percentage: parseFloat(formData.employer_match_percentage) || 0,
+        employer_match_cap: parseFloat(formData.employer_match_cap) || 0,
       };
 
       if (plan) {
@@ -218,9 +254,7 @@ export default function PlanFormModal({
       onClose={onClose} 
       maxWidth="md" 
       fullWidth
-      PaperProps={{
-        sx: { borderRadius: 4, boxShadow: "0 24px 48px rgba(0,0,0,0.2)" }
-      }}
+      PaperProps={{ sx: { borderRadius: 4, boxShadow: "0 24px 48px rgba(0,0,0,0.2)" } }}
     >
       <DialogTitle sx={{ 
         m: 0, 
@@ -239,10 +273,7 @@ export default function PlanFormModal({
             {plan ? "Update your plan details" : "Create a comprehensive financial strategy"}
           </Typography>
         </Box>
-        <IconButton 
-          onClick={onClose} 
-          sx={{ color: "white", "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}
-        >
+        <IconButton onClick={onClose} sx={{ color: "white", "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}>
           <Close />
         </IconButton>
       </DialogTitle>
@@ -266,9 +297,7 @@ export default function PlanFormModal({
                 value={formData.plan_type}
                 onChange={handleChange}
                 required
-                InputProps={{
-                  sx: { borderRadius: 2, bgcolor: "white" }
-                }}
+                InputProps={{ sx: { borderRadius: 2, bgcolor: "white" } }}
                 helperText={
                   SINGLE_PLAN_LIMIT.includes(formData.plan_type)
                     ? "⚠️ You can only have ONE of this plan type (legal limit)"
@@ -279,17 +308,14 @@ export default function PlanFormModal({
                   <MenuItem key={type} value={type}>
                     {type}
                     {SINGLE_PLAN_LIMIT.includes(type) && (
-                      <Chip 
-                        label="Single" 
-                        size="small" 
-                        sx={{ ml: 1, height: 20, fontSize: "0.7rem" }}
-                      />
+                      <Chip label="Single" size="small" sx={{ ml: 1, height: 20, fontSize: "0.7rem" }} />
                     )}
                   </MenuItem>
                 ))}
               </TextField>
             </Grid>
 
+            {/* Personal Information Section */}
             <Grid item xs={12}>
               <Divider sx={{ my: 1 }}>
                 <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
@@ -309,9 +335,7 @@ export default function PlanFormModal({
                 onChange={handleChange}
                 required
                 helperText="Your age today"
-                InputProps={{
-                  sx: { borderRadius: 2, bgcolor: "white" }
-                }}
+                InputProps={{ sx: { borderRadius: 2, bgcolor: "white" } }}
               />
             </Grid>
 
@@ -326,12 +350,11 @@ export default function PlanFormModal({
                 onChange={handleChange}
                 required
                 helperText="How many years will you contribute?"
-                InputProps={{
-                  sx: { borderRadius: 2, bgcolor: "white" }
-                }}
+                InputProps={{ sx: { borderRadius: 2, bgcolor: "white" } }}
               />
             </Grid>
 
+            {/* Financial Details Section */}
             <Grid item xs={12}>
               <Divider sx={{ my: 1 }}>
                 <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
@@ -352,11 +375,7 @@ export default function PlanFormModal({
                 required
                 helperText="Current worth of the plan"
                 InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Typography sx={{ color: "text.secondary", fontWeight: 700 }}>$</Typography>
-                    </InputAdornment>
-                  ),
+                  startAdornment: <InputAdornment position="start"><Typography sx={{ color: "text.secondary", fontWeight: 700 }}>$</Typography></InputAdornment>,
                   sx: { borderRadius: 2, bgcolor: "white" }
                 }}
               />
@@ -374,11 +393,7 @@ export default function PlanFormModal({
                 required
                 helperText="Amount per month"
                 InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Typography sx={{ color: "text.secondary", fontWeight: 700 }}>$</Typography>
-                    </InputAdornment>
-                  ),
+                  startAdornment: <InputAdornment position="start"><Typography sx={{ color: "text.secondary", fontWeight: 700 }}>$</Typography></InputAdornment>,
                   sx: { borderRadius: 2, bgcolor: "white" }
                 }}
               />
@@ -395,11 +410,7 @@ export default function PlanFormModal({
                 onChange={handleChange}
                 helperText="Sum of all contributions"
                 InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Typography sx={{ color: "text.secondary", fontWeight: 700 }}>$</Typography>
-                    </InputAdornment>
-                  ),
+                  startAdornment: <InputAdornment position="start"><Typography sx={{ color: "text.secondary", fontWeight: 700 }}>$</Typography></InputAdornment>,
                   sx: { borderRadius: 2, bgcolor: "white" }
                 }}
               />
@@ -417,33 +428,106 @@ export default function PlanFormModal({
                 required
                 helperText="Total contribution + interest - costs"
                 InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Typography sx={{ color: "text.secondary", fontWeight: 700 }}>$</Typography>
-                    </InputAdornment>
-                  ),
+                  startAdornment: <InputAdornment position="start"><Typography sx={{ color: "text.secondary", fontWeight: 700 }}>$</Typography></InputAdornment>,
                   sx: { borderRadius: 2, bgcolor: "white" }
                 }}
               />
               {calculatedCashValue > 0 && (
                 <Button
                   size="small"
-                  onClick={useSuggestedCashValue}
+                  onClick={() => setFormData({ ...formData, cash_value: calculatedCashValue.toFixed(2) })}
                   startIcon={<TrendingUp />}
-                  sx={{ 
-                    mt: 1, 
-                    textTransform: "none", 
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                    color: colors.accent,
-                    "&:hover": { bgcolor: "rgba(0, 212, 255, 0.08)" }
-                  }}
+                  sx={{ mt: 1, textTransform: "none", fontSize: "0.75rem", fontWeight: 600, color: colors.accent, "&:hover": { bgcolor: "rgba(0, 212, 255, 0.08)" } }}
                 >
                   Use suggested: ${calculatedCashValue.toFixed(0)}
                 </Button>
               )}
             </Grid>
 
+            {/* Employer Match Section */}
+            <Grid item xs={12}>
+              <Divider sx={{ my: 2 }}>
+                <Typography variant="caption">Employer Match (401k only)</Typography>
+              </Divider>
+            </Grid>
+
+            {['Traditional 401k', 'Roth 401k', 'Solo 401k'].includes(formData.plan_type) && (
+              <>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={formData.employer_match_enabled}
+                        onChange={(e) => setFormData({ ...formData, employer_match_enabled: e.target.checked })}
+                      />
+                    }
+                    label="My employer offers matching contributions"
+                  />
+                </Grid>
+
+                {formData.employer_match_enabled && (
+                  <>
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        fullWidth
+                        label="Annual Salary"
+                        name="user_annual_salary"
+                        type="number"
+                        value={formData.user_annual_salary}
+                        onChange={handleChange}
+                        InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
+                        helperText="Your gross annual salary"
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        fullWidth
+                        label="Match Percentage"
+                        name="employer_match_percentage"
+                        type="number"
+                        value={formData.employer_match_percentage * 100}
+                        onChange={(e) =>
+                          setFormData({ ...formData, employer_match_percentage: parseFloat(e.target.value) / 100 })
+                        }
+                        InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+                        helperText="e.g., 50% means $0.50 per $1.00"
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        fullWidth
+                        label="Match Cap"
+                        name="employer_match_cap"
+                        type="number"
+                        value={formData.employer_match_cap * 100}
+                        onChange={(e) =>
+                          setFormData({ ...formData, employer_match_cap: parseFloat(e.target.value) / 100 })
+                        }
+                        InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+                        helperText="Max % of salary matched (e.g., 6%)"
+                      />
+                    </Grid>
+
+                    {formData.user_annual_salary && formData.employer_match_percentage && formData.employer_match_cap && (
+                      <Grid item xs={12}>
+                        <Alert severity="success" icon={<TrendingUp />}>
+                          <Typography variant="body2" fontWeight={600}>
+                            Estimated Employer Match: ${calculateMatch().toLocaleString()}/year
+                          </Typography>
+                          <Typography variant="caption">
+                            This is FREE money! Make sure to contribute at least {(formData.employer_match_cap * 100).toFixed(0)}% to get full match.
+                          </Typography>
+                        </Alert>
+                      </Grid>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+
+            {/* Income Withdrawal Details Section */}
             <Grid item xs={12}>
               <Divider sx={{ my: 1 }}>
                 <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
@@ -463,9 +547,7 @@ export default function PlanFormModal({
                 onChange={handleChange}
                 required
                 helperText="Age to start withdrawals"
-                InputProps={{
-                  sx: { borderRadius: 2, bgcolor: "white" }
-                }}
+                InputProps={{ sx: { borderRadius: 2, bgcolor: "white" } }}
               />
             </Grid>
 
@@ -480,9 +562,7 @@ export default function PlanFormModal({
                 onChange={handleChange}
                 required
                 helperText="Age to stop withdrawals"
-                InputProps={{
-                  sx: { borderRadius: 2, bgcolor: "white" }
-                }}
+                InputProps={{ sx: { borderRadius: 2, bgcolor: "white" } }}
               />
             </Grid>
 
@@ -498,12 +578,8 @@ export default function PlanFormModal({
                 required
                 helperText="$ per year from policy"
                 InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Typography sx={{ color: "text.secondary", fontWeight: 700 }}>$</Typography>
-                    </InputAdornment>
-                  ),
-                  sx: { borderRadius: 2, bgcolor: "white" }
+                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                  sx: { borderRadius: 2, bgcolor: "white" },
                 }}
               />
             </Grid>
@@ -519,20 +595,14 @@ export default function PlanFormModal({
                 value={formData.notes}
                 onChange={handleChange}
                 helperText="Additional details about this plan"
-                InputProps={{
-                  sx: { borderRadius: 2, bgcolor: "white" }
-                }}
+                InputProps={{ sx: { borderRadius: 2, bgcolor: "white" } }}
               />
             </Grid>
           </Grid>
         </DialogContent>
 
         <DialogActions sx={{ p: 3, bgcolor: "white", borderTop: `1px solid ${colors.border}` }}>
-          <Button 
-            onClick={onClose} 
-            disabled={loading}
-            sx={{ color: "text.secondary", fontWeight: 600, textTransform: "none" }}
-          >
+          <Button onClick={onClose} disabled={loading} sx={{ color: "text.secondary", fontWeight: 600, textTransform: "none" }}>
             Cancel
           </Button>
           <Button
@@ -540,16 +610,7 @@ export default function PlanFormModal({
             variant="contained"
             disabled={loading}
             startIcon={!loading && <Save />}
-            sx={{ 
-              minWidth: 120, 
-              borderRadius: 2, 
-              py: 1,
-              textTransform: "none",
-              fontWeight: 700,
-              bgcolor: colors.primary,
-              boxShadow: "0 4px 12px rgba(10, 37, 64, 0.2)",
-              "&:hover": { bgcolor: "#1a365d" }
-            }}
+            sx={{ minWidth: 120, borderRadius: 2, py: 1, textTransform: "none", fontWeight: 700, bgcolor: colors.primary, boxShadow: "0 4px 12px rgba(10, 37, 64, 0.2)", "&:hover": { bgcolor: "#1a365d" } }}
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : (plan ? "Update Plan" : "Create Plan")}
           </Button>

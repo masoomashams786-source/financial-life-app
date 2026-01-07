@@ -87,7 +87,7 @@ export default function MyPlansSection() {
   }
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 } }}>
+    <Box sx={{bgcolor: "#e4eaf0ff", p: { xs: 2, md: 4 } }}>
       {/* Header */}
       <Stack 
         direction={{ xs: "column", sm: "row" }} 
