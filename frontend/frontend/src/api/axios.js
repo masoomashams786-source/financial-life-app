@@ -5,10 +5,10 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 10000, // Reduced from 15s to 10s
+  timeout: 30000, // ✅ INCREASED to 30 seconds (was 15 seconds)
 });
 
-// REQUEST INTERCEPTOR - Optimized
+// ✅ REQUEST INTERCEPTOR - Automatically attach JWT token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -18,42 +18,34 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
-    // Don't log in production
-    if (import.meta.env.DEV) {
-      console.error("Request interceptor error:", error);
-    }
+    console.error("Request interceptor error:", error);
     return Promise.reject(error);
   }
 );
 
-//  RESPONSE INTERCEPTOR - Optimized with debouncing
-let redirectTimeout = null;
-
+// ✅ RESPONSE INTERCEPTOR - Handle errors globally
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle 401 Unauthorized with debouncing to prevent multiple redirects
+    // Handle 401 Unauthorized
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
-      
-      // Debounce redirect to prevent race conditions
-      if (!redirectTimeout) {
-        redirectTimeout = setTimeout(() => {
-          window.location.href = "/login";
-          redirectTimeout = null;
-        }, 100);
-      }
+      window.location.href = "/login";
     }
     
-    // Only log detailed errors in development
-    if (import.meta.env.DEV) {
-      if (error.code === 'ECONNABORTED') {
-        console.error('Request timeout');
-      }
-      
-      if (!error.response) {
-        console.error('Network error - server may be down');
-      }
+    // Handle timeout
+    if (error.code === 'ECONNABORTED') {
+      console.error('Request timeout - server is taking too long');
+    }
+    
+    // Handle network errors
+    if (!error.response) {
+      console.error('Network error - server may be down');
+    }
+    
+    // Handle 500 errors
+    if (error.response?.status === 500) {
+      console.error('Server error:', error.response?.data?.message || 'Internal server error');
     }
     
     return Promise.reject(error);
