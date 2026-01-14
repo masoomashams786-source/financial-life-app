@@ -172,8 +172,14 @@ export default function CalculatorSection() {
       </Box>
 
       <Box
-        sx={{ display: "grid", gap: 1, gridTemplateColumns: "repeat(2, 1fr)" }}
+        sx={{ display: "grid", gap:2, gridTemplateColumns: {
+      xs: "1fr",        // mobile: stacked
+      md: "1fr 1fr",    // tablet & up: 2 columns
+    },
+    alignItems: "start",
+  }}
       >
+       
         {/* Left: Inputs */}
         <Grid item xs={6}>
           <PlanSelectionBoard
@@ -194,6 +200,7 @@ export default function CalculatorSection() {
             formValues={form.watch()}
           />
         </Grid>
+        
       </Box>
 
       {/* Save Confirmation Dialog */}

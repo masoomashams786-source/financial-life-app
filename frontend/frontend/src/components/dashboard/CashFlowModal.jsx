@@ -157,8 +157,9 @@ export default function CashFlowModal({ open, onClose, cashFlow, breakdown }) {
         </Box>
       </Box>
 
-      <DialogContent sx={{ p: 3 }}>
-        <Stack spacing={3}>
+      <DialogContent sx={{  p: 3, position: "relative", zIndex: 3,display: "flex",
+    justifyContent: "center" }}>
+        <Stack spacing={8}>
           {/* Summary Cards */}
           <Grid container spacing={2}>
             {/* Monthly Cash Flow */}
@@ -276,7 +277,8 @@ export default function CashFlowModal({ open, onClose, cashFlow, breakdown }) {
           </Grid>
 
           {/* Charts Section */}
-          <Grid container spacing={2}>
+         
+          <Grid container spacing={4}>
             {/* Income Breakdown Pie Chart */}
             <Grid item xs={12} md={6}>
               <Paper

@@ -44,7 +44,8 @@ export default function Header() {
           backdropFilter: "blur(12px)",
           borderBottom: `1px solid ${colors.border}`,
           color: colors.primary,
-          px: { xs: 0, md: 2 }
+          px: { xs: 0, md: 2 },
+          width: "100%",
         }}
       >
         <Toolbar sx={{ justifyContent: "space-between", py: 1 }}>

@@ -10,6 +10,7 @@ def register_routes(app):
     from .insights import insights_bp
     from .news import news_bp
     from .sp500 import sp500_bp
+    from .wealth_velocity import wealth_velocity_bp
     app.register_blueprint(sp500_bp)    
     app.register_blueprint(health_bp)
     app.register_blueprint(auth_bp)
@@ -19,3 +20,4 @@ def register_routes(app):
     app.register_blueprint(projections_bp)
     app.register_blueprint(insights_bp)
     app.register_blueprint(news_bp)
+    app.register_blueprint(wealth_velocity_bp)
