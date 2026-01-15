@@ -5,6 +5,7 @@ import Register from "../pages/Register";
 import Dashboard from "../pages/Dashboard";
 import FinancialVehicles from "../pages/FinancialVehicles";
 import { Box, CircularProgress } from "@mui/material";
+import HowWeCalculate from "../pages/HowWeCalculate";
 
 export default function AppRouter() {
   const { user, error } = useAuth();
@@ -69,7 +70,18 @@ export default function AppRouter() {
           </PrivateRoute>
         }
       />
-      <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
+      <Route
+        path="/how-we-calculate"
+        element={
+          <PrivateRoute>
+            <HowWeCalculate />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="*"
+        element={<Navigate to={user ? "/dashboard" : "/login"} replace />}
+      />
     </Routes>
   );
 }

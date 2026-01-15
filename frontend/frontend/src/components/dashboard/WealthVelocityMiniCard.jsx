@@ -14,6 +14,7 @@ import {
   TrendingDown,
   Speed,
   ShowChart,
+  Warning,
 } from "@mui/icons-material";
 import { wealthVelocityFetcher } from "../../api/wealthVelocity";
 import WealthVelocityModal from "./WealthVelocityModal";
@@ -45,6 +46,24 @@ export default function WealthVelocityMiniCard() {
 
   const getVelocityStatus = () => {
     if (!data) return null;
+
+    if (data.stage === "Debt Payoff Mode") {
+    return {
+      color: colors.danger,
+      icon: <Warning sx={{ fontSize: 18 }} />,
+      label: "Debt Mode",
+      bgColor: alpha(colors.danger, 0.1),
+    };
+  }
+  
+  if (data.stage === "Foundation Building") {
+    return {
+      color: colors.accent,
+      icon: <TrendingUp sx={{ fontSize: 18 }} />,
+      label: "Building",
+      bgColor: alpha(colors.accent, 0.1),
+    };
+  }
     
     const velocity = data.velocity;
     const benchmark = data.benchmark;

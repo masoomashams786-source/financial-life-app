@@ -20,6 +20,7 @@ import { insightsFetcher } from "../api/insights";
 import SP500MiniCard from "../components/dashboard/SP500MiniCard";
 import CashFlowMiniCard from "../components/dashboard/CashFlowMiniCard";
 import WealthVelocityMiniCard from "../components/dashboard/WealthVelocityMiniCard";
+import HowWeCalculateMiniCard from "../components/dashboard/HowWeCalculateMiniCard";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -95,6 +96,9 @@ export default function Dashboard() {
 
                 <Grid item xs={12} sm={6} lg={3}>
                   <WealthVelocityMiniCard />
+                </Grid>
+                <Grid item xs={12} sm={6} lg={3}>
+                  <HowWeCalculateMiniCard />
                 </Grid>
 
                 

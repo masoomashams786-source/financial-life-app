@@ -118,7 +118,7 @@ export default function CashFlowModal({ open, onClose, cashFlow, breakdown }) {
       <Box
         sx={{
           background: `linear-gradient(135deg, ${colors.primary} 0%, #1e3a8a 100%)`,
-          p: 3,
+          p: 5,
           position: "relative",
           overflow: "hidden",
         }}

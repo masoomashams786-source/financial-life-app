@@ -182,7 +182,7 @@ export default function FinancialPlansCard() {
                     </Typography>
                     {plan.income_rate > 0 && (
                       <Typography variant="caption" color={colors.success} display="block" fontWeight={600}>
-                        Yields {formatCurrency(plan.income_rate)}/yr from age {plan.income_start_age}
+                        Income withdraw: {formatCurrency(plan.income_rate)}/yr from age {plan.income_start_age}
                       </Typography>
                     )}
                   </Box>

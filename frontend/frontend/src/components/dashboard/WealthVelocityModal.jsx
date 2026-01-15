@@ -11,6 +11,7 @@ import {
   Divider,
   LinearProgress,
   Chip,
+  Alert,
 } from "@mui/material";
 import {
   Close,
@@ -65,6 +66,26 @@ export default function WealthVelocityModal({ open, onClose, data }) {
   const formatPercentage = (value) => {
     return `${value >= 0 ? "+" : ""}${value.toFixed(1)}%`;
   };
+
+  {data.stage_specific_message && (
+  <Alert severity="info" sx={{ mb: 3 }}>
+    {data.stage_specific_message}
+  </Alert>
+)}
+
+// Replace recommendations section:
+{data.recommendations && data.recommendations.length > 0 && (
+  <Paper sx={{ p: 2.5, mt: 3 }}>
+    <Typography variant="h6" fontWeight={700} gutterBottom>
+      Recommendations
+    </Typography>
+    {data.recommendations.map((rec, idx) => (
+      <Typography key={idx} variant="body2" sx={{ mb: 1 }}>
+        • {rec}
+      </Typography>
+    ))}
+  </Paper>
+)}
 
   // Projection data for line chart
   const projectionData = [
@@ -176,7 +197,7 @@ export default function WealthVelocityModal({ open, onClose, data }) {
       <Box
         sx={{
           background: `linear-gradient(135deg, ${colors.primary} 0%, #1e3a8a 100%)`,
-          p: 3,
+          p: 5,
           position: "relative",
           overflow: "hidden",
         }}
@@ -201,6 +222,7 @@ export default function WealthVelocityModal({ open, onClose, data }) {
           zIndex={1}
         >
           <Box>
+            
             <Typography variant="h5" fontWeight={800} color="white" gutterBottom>
               Wealth Velocity Analysis
             </Typography>
@@ -225,6 +247,81 @@ export default function WealthVelocityModal({ open, onClose, data }) {
       </Box>
 
       <DialogContent sx={{ p: 3 }}>
+        
+        
+          {/* FOUNDATION STAGE WARNING - Show prominently */}
+          {data.velocity_warning && data.velocity_warning.show && (
+            <Paper
+              elevation={0}
+              sx={{
+                p: 3,
+                borderRadius: 3,
+                background: `linear-gradient(135deg, ${alpha('#F59E0B', 0.1)} 0%, ${alpha('#F59E0B', 0.05)} 100%)`,
+                border: `2px solid ${alpha('#F59E0B', 0.3)}`,
+              }}
+            >
+              <Box display="flex" alignItems="flex-start" gap={2}>
+                <Box
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '12px',
+                    bgcolor: alpha('#F59E0B', 0.15),
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <InfoOutlined sx={{ fontSize: 28, color: '#F59E0B' }} />
+                </Box>
+                <Box flex={1}>
+                  <Typography variant="h6" fontWeight={800} color="#92400E" gutterBottom>
+                    Focus on Dollar Amounts, Not Percentages
+                  </Typography>
+                  <Typography variant="body2" color="#78350F" sx={{ mb: 2 }}>
+                    {data.velocity_warning.message}
+                  </Typography>
+                  {data.metrics.annual_dollar_growth && (
+                    <Box
+                      sx={{
+                        p: 2,
+                        bgcolor: alpha('#F59E0B', 0.1),
+                        borderRadius: 2,
+                        mt: 2,
+                      }}
+                    >
+                      <Typography variant="caption" color="#78350F" fontWeight={700} display="block">
+                        WHAT REALLY MATTERS:
+                      </Typography>
+                      <Typography variant="h5" fontWeight={900} color="#92400E">
+                        ${formatCurrency(data.metrics.annual_dollar_growth)}/year
+                      </Typography>
+                      <Typography variant="caption" color="#78350F">
+                        Absolute wealth gain • {data.metrics.savings_rate?.toFixed(1)}% savings rate
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+            </Paper>
+          )}
+
+          {/* Stage-specific message */}
+          {data.stage_specific_message && (
+            <Alert 
+              severity="info" 
+              icon={<Assessment />}
+              sx={{ 
+                borderRadius: 2,
+                '& .MuiAlert-message': { width: '100%' }
+              }}
+            >
+              <Typography variant="body2">{data.stage_specific_message}</Typography>
+            </Alert>
+          )}
+
+          {/* Key Metrics Row */}
         <Stack spacing={3}>
           {/* Key Metrics Row */}
           <Grid container spacing={2}>

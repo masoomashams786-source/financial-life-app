@@ -45,7 +45,7 @@ export default function Header() {
           borderBottom: `1px solid ${colors.border}`,
           color: colors.primary,
           px: { xs: 0, md: 2 },
-          width: "100%",
+          
         }}
       >
         <Toolbar sx={{ justifyContent: "space-between", py: 1 }}>

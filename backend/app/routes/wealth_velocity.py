@@ -1,5 +1,5 @@
 """
-API routes for Wealth Velocity metrics
+API routes for Wealth Velocity metrics - FIXED
 """
 
 from flask import Blueprint, jsonify
@@ -13,21 +13,14 @@ wealth_velocity_bp = Blueprint("wealth_velocity", __name__, url_prefix="/api/wea
 @wealth_velocity_bp.route("", methods=["GET"])
 @jwt_required()
 def get_wealth_velocity():
-    
     """
     Get wealth velocity analysis for current user
     
-    Returns:
-    {
-        "velocity": 14.2,
-        "real_velocity": 11.2,
-        "trend": "up",
-        "momentum": "strong",
-        "percentile": 90,
-        "benchmark": {...},
-        "projections": {...},
-        "metrics": {...}
-    }
+    Returns realistic wealth velocity based on:
+    1. Market returns on existing assets (5-10% annually)
+    2. Verified contributions (retirement plans only)
+    
+    Does NOT assume all "surplus cash flow" is saved.
     """
     user_id = get_jwt_identity()
     
@@ -39,6 +32,19 @@ def get_wealth_velocity():
         if not snapshot:
             return jsonify({"error": "Financial snapshot not found"}), 404
         
+        # Calculate VERIFIED monthly contributions (what we can prove is being saved)
+        monthly_plan_contributions = sum(plan.monthly_contribution for plan in plans)
+        
+        # Calculate total assets
+        total_assets = snapshot.savings + snapshot.investments
+        
+        # Add plan cash values to total assets
+        plan_cash_values = sum(plan.cash_value for plan in plans)
+        total_assets += plan_cash_values
+        
+        # Calculate net worth
+        net_worth = total_assets - snapshot.debt
+        
         # Build user data
         user_data = {
             'monthly_income': snapshot.net_income,
@@ -47,7 +53,8 @@ def get_wealth_velocity():
             'savings': snapshot.savings,
             'investments': snapshot.investments,
             'debt': snapshot.debt,
-            'net_worth': (snapshot.savings + snapshot.investments) - snapshot.debt,
+            'net_worth': net_worth,
+            'monthly_plan_contributions': monthly_plan_contributions,  # VERIFIED savings
             'savings_rate': _calculate_savings_rate(snapshot, plans)
         }
         
@@ -67,19 +74,24 @@ def get_wealth_velocity():
 
 
 def _calculate_savings_rate(snapshot, plans):
-    """Helper to calculate savings rate"""
+    """
+    Helper to calculate ACTUAL savings rate
+    
+    Savings rate = (verified contributions) / (total income)
+    
+    NOT the same as "cash flow surplus" because:
+    - Cash flow surplus might go to discretionary spending
+    - We only count what we KNOW is being saved
+    """
     total_income = snapshot.net_income + snapshot.side_income
     
     if total_income == 0:
         return 0
     
-    # Calculate plan contributions
+    # VERIFIED savings = plan contributions only
     plan_contributions = sum(plan.monthly_contribution for plan in plans)
     
-    # Monthly surplus
-    monthly_surplus = total_income - snapshot.monthly_expenses - plan_contributions
+    # Savings rate = what percentage of income is being invested
+    savings_rate = (plan_contributions / total_income) if total_income > 0 else 0
     
-    # Savings rate
-    savings_rate = (monthly_surplus / total_income) if total_income > 0 else 0
-    
-    return max(0, savings_rate)  # Ensure non-negative
+    return max(0, min(savings_rate, 1.0))  # Cap between 0-100%
