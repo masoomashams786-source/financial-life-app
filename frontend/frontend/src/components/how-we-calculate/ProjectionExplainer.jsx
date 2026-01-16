@@ -115,7 +115,7 @@ export default function ProjectionExplainer() {
       <ExplainerSection
         title="The Three Scenarios"
         content={
-          <Grid container spacing={2}>
+          <Grid container spacing={2} mb={4}>
             <Grid item xs={12} md={4}>
               <Paper
                 elevation={0}
