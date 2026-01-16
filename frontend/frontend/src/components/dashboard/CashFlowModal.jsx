@@ -430,6 +430,7 @@ export default function CashFlowModal({ open, onClose, cashFlow, breakdown }) {
           </Paper>
 
           {/* Annual Projection Summary */}
+         
           <Paper
             elevation={0}
             sx={{
@@ -440,7 +441,7 @@ export default function CashFlowModal({ open, onClose, cashFlow, breakdown }) {
             }}
           >
             <Box display="flex" justifyContent="space-between" alignItems="center">
-              <Box>
+              <Box >
                 <Typography variant="body2" color="text.secondary" fontWeight={600} gutterBottom>
                   Annual Projection
                 </Typography>
@@ -469,6 +470,7 @@ export default function CashFlowModal({ open, onClose, cashFlow, breakdown }) {
               </Box>
             </Box>
           </Paper>
+         
         </Stack>
       </DialogContent>
     </Dialog>

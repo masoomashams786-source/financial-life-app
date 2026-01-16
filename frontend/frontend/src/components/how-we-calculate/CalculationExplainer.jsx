@@ -9,6 +9,9 @@ import {
 } from "@mui/icons-material";
 import WealthVelocityExplainer from "./WealthVelocityExplainer";
 import CashFlowExplainer from "./CashFlowExplainer";
+import ProjectionExplainer from "./ProjectionExplainer";
+import HealthScoreExplainer from "./HealthScoreExplainer";
+import InsightsExplainer from "./InsightsExplainer";
 
 export default function CalculationExplainer() {
   const [activeTab, setActiveTab] = useState(0);
@@ -30,11 +33,22 @@ export default function CalculationExplainer() {
       icon: <AccountBalanceWallet />,
       component: <CashFlowExplainer />,
     },
-    // We'll add more tabs later
-    // { label: "Cash Flow", icon: <AccountBalanceWallet />, component: <CashFlowExplainer /> },
-    // { label: "Projections", icon: <TrendingUp />, component: <ProjectionExplainer /> },
-    // { label: "Health Score", icon: <LocalHospital />, component: <HealthScoreExplainer /> },
-    // { label: "Insights", icon: <Lightbulb />, component: <InsightsExplainer /> },
+     {
+      label: "Projections", 
+      icon: <TrendingUp />,
+      component: <ProjectionExplainer />,
+    },
+     {
+      label: "Health Score", 
+      icon: <LocalHospital />,
+      component: <HealthScoreExplainer />,
+    },
+    {
+      label: "Insights", 
+      icon: <Lightbulb />,
+      component: <InsightsExplainer />,
+    },
+   
   ];
 
   return (

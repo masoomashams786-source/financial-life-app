@@ -47,7 +47,7 @@ export default function FinancialVehicles() {
     >
       <Header />
 
-      <Container maxWidth="xl" sx={{ py: { xs: 3, md: 6 } }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 3, md: 6 } }}>
         {/* Page Header */}
         <Box mb={5}>
           <Stack 
