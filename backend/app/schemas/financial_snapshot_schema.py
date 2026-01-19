@@ -7,6 +7,7 @@ class FinancialSnapshotSchema(ma.Schema):
 
     id = fields.Int(dump_only=True)
     user_id = fields.Int(dump_only=True)
+    age = fields.Int(allow_none=True, validate=validate.Range(min=1, max=120))
     
     net_income = fields.Float(required=True, validate=validate.Range(min=0))
     monthly_expenses = fields.Float(required=True, validate=validate.Range(min=0))

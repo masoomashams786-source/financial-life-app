@@ -8,6 +8,7 @@ class FinancialSnapshot(db.Model):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    age: Mapped[int] = mapped_column(Integer, nullable=True)
     
     # Income
     net_income: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)

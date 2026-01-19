@@ -21,7 +21,7 @@ import WealthVelocityModal from "./WealthVelocityModal";
 
 export default function WealthVelocityMiniCard() {
   const [modalOpen, setModalOpen] = useState(false);
-  
+
   const { data, error, isLoading } = useSWR(
     "/wealth-velocity",
     wealthVelocityFetcher,
@@ -45,29 +45,36 @@ export default function WealthVelocityMiniCard() {
   };
 
   const getVelocityStatus = () => {
-    if (!data) return null;
+    // Default state when no data
+    if (!data) {
+      return {
+        color: colors.accent,
+        icon: <Speed sx={{ fontSize: 18 }} />,
+        label: "Pending",
+        bgColor: alpha(colors.accent, 0.1),
+      };
+    }
 
     if (data.stage === "Debt Payoff Mode") {
-    return {
-      color: colors.danger,
-      icon: <Warning sx={{ fontSize: 18 }} />,
-      label: "Debt Mode",
-      bgColor: alpha(colors.danger, 0.1),
-    };
-  }
-  
-  if (data.stage === "Foundation Building") {
-    return {
-      color: colors.accent,
-      icon: <TrendingUp sx={{ fontSize: 18 }} />,
-      label: "Building",
-      bgColor: alpha(colors.accent, 0.1),
-    };
-  }
-    
+      return {
+        color: colors.danger,
+        icon: <Warning sx={{ fontSize: 18 }} />,
+        label: "Debt Mode",
+        bgColor: alpha(colors.danger, 0.1),
+      };
+    }
+
+    if (data.stage === "Foundation Building") {
+      return {
+        color: colors.accent,
+        icon: <TrendingUp sx={{ fontSize: 18 }} />,
+        label: "Building",
+        bgColor: alpha(colors.accent, 0.1),
+      };
+    }
+
     const velocity = data.velocity;
-    const benchmark = data.benchmark;
-    
+
     if (velocity >= 12) {
       return {
         color: colors.success,
@@ -99,75 +106,11 @@ export default function WealthVelocityMiniCard() {
     }
   };
 
+  const status = getVelocityStatus();
+
   if (isLoading) {
     return (
       <Card
-        sx={{
-          borderRadius: 3,
-          border: "1px solid #f1f5f9",
-          bgcolor: colors.surface,
-          height: "100%",
-          minHeight: 140,
-          cursor: "wait",
-        }}
-      >
-        <CardContent
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100%",
-          }}
-        >
-          <CircularProgress
-            size={28}
-            thickness={5}
-            sx={{ color: colors.accent }}
-          />
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1.5 }}>
-            Calculating...
-          </Typography>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card
-        sx={{
-          borderRadius: 3,
-          border: "1px solid #f1f5f9",
-          bgcolor: colors.surface,
-          height: "100%",
-          minHeight: 140,
-        }}
-      >
-        <CardContent
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100%",
-            textAlign: "center",
-          }}
-        >
-          <Typography variant="caption" color="text.secondary">
-            Update your financial snapshot
-          </Typography>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const status = getVelocityStatus();
-
-  return (
-    <>
-      <Card
-        onClick={() => setModalOpen(true)}
         sx={{
           borderRadius: 3,
           boxShadow: "0 8px 16px -6px rgba(10, 37, 64, 0.12)",
@@ -176,21 +119,11 @@ export default function WealthVelocityMiniCard() {
           height: "100%",
           minHeight: 140,
           width: "300px",
-          cursor: "pointer",
           position: "relative",
           overflow: "hidden",
-          transition: "all 0.2s ease-in-out",
-          "&:hover": {
-            transform: "translateY(-6px)",
-            boxShadow: "0 20px 32px -8px rgba(10, 37, 64, 0.2)",
-            borderColor: colors.accent,
-          },
-          "&:active": {
-            transform: "translateY(-2px)",
-          },
         }}
       >
-        {/* Dynamic Background Pattern */}
+        {/* Background Pattern - Keep during loading */}
         <Box
           sx={{
             position: "absolute",
@@ -240,11 +173,110 @@ export default function WealthVelocityMiniCard() {
             height: "100%",
             display: "flex",
             flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
             position: "relative",
             zIndex: 1,
           }}
         >
-          {/* Header */}
+          <CircularProgress
+            size={28}
+            thickness={5}
+            sx={{ color: colors.accent }}
+          />
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1.5 }}>
+            Calculating...
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      <Card
+        onClick={() => data && setModalOpen(true)}
+        sx={{
+          borderRadius: 3,
+          boxShadow: "0 8px 16px -6px rgba(10, 37, 64, 0.12)",
+          border: "1px solid #f1f5f9",
+          bgcolor: colors.surface,
+          height: "100%",
+          minHeight: 140,
+          width: "300px",
+          cursor: data ? "pointer" : "default",
+          position: "relative",
+          overflow: "hidden",
+          transition: "all 0.2s ease-in-out",
+          "&:hover": data
+            ? {
+                transform: "translateY(-6px)",
+                boxShadow: "0 20px 32px -8px rgba(10, 37, 64, 0.2)",
+                borderColor: colors.accent,
+              }
+            : {},
+          "&:active": data
+            ? {
+                transform: "translateY(-2px)",
+              }
+            : {},
+        }}
+      >
+        {/* Dynamic Background Pattern - Always visible */}
+        <Box
+          sx={{
+            position: "absolute",
+            right: -15,
+            top: -15,
+            width: 160,
+            height: 160,
+            background: `radial-gradient(circle at center, ${alpha(
+              status.color,
+              0.12
+            )} 0%, transparent 70%)`,
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 0,
+          }}
+        >
+          <Speed
+            sx={{
+              fontSize: 100,
+              color: status.color,
+              opacity: 0.08,
+              transform: "rotate(-15deg)",
+            }}
+          />
+        </Box>
+
+        {/* Subtle Grid Overlay - Always visible */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            opacity: 0.03,
+            backgroundImage: `linear-gradient(${colors.primary} 1px, transparent 1px), linear-gradient(90deg, ${colors.primary} 1px, transparent 1px)`,
+            backgroundSize: "20px 20px",
+            zIndex: 0,
+          }}
+        />
+
+        <CardContent
+          sx={{
+            p: 2.5,
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
+          {/* Header - Always visible */}
           <Box
             display="flex"
             alignItems="center"
@@ -300,40 +332,71 @@ export default function WealthVelocityMiniCard() {
             />
           </Box>
 
-          {/* Amount - Large and Prominent */}
+          {/* Content Area - Show data or empty state */}
           <Box
             flex={1}
             display="flex"
             flexDirection="column"
             justifyContent="center"
           >
-            <Typography
-              variant="h5"
-              fontWeight={900}
-              sx={{
-                color: colors.primary,
-                letterSpacing: "-0.02em",
-                lineHeight: 1,
-                mb: 0.5,
-              }}
-            >
-              {data.velocity >= 0 ? "+" : ""}
-              {formatPercentage(data.velocity)}
-            </Typography>
+            {error || !data ? (
+              // Empty state - keep design
+              <Box textAlign="center">
+                <Typography
+                  variant="h5"
+                  fontWeight={900}
+                  sx={{
+                    color: colors.primary,
+                    letterSpacing: "-0.02em",
+                    lineHeight: 1,
+                    mb: 0.5,
+                    opacity: 0.3,
+                  }}
+                >
+                  --
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "text.secondary",
+                    fontSize: "0.7rem",
+                  }}
+                >
+                  Update financial snapshot
+                </Typography>
+              </Box>
+            ) : (
+              // Data state
+              <>
+                <Typography
+                  variant="h5"
+                  fontWeight={900}
+                  sx={{
+                    color: colors.primary,
+                    letterSpacing: "-0.02em",
+                    lineHeight: 1,
+                    mb: 0.5,
+                  }}
+                >
+                  {data.velocity >= 0 ? "+" : ""}
+                  {formatPercentage(data.velocity)}
+                </Typography>
 
-            {/* Status Indicator */}
-            <Box display="flex" alignItems="center" gap={0.75}>
-              <Typography
-                variant="body2"
-                fontWeight={700}
-                sx={{ color: status.color }}
-              >
-                {data.benchmark.description}
-              </Typography>
-            </Box>
+                {/* Status Indicator */}
+                <Box display="flex" alignItems="center" gap={0.75}>
+                  <Typography
+                    variant="body2"
+                    fontWeight={700}
+                    sx={{ color: status.color }}
+                  >
+                    {data.benchmark.description}
+                  </Typography>
+                </Box>
+              </>
+            )}
           </Box>
 
-          {/* Footer Hint */}
+          {/* Footer Hint - Always visible */}
           <Box
             sx={{
               pt: 1.5,
@@ -344,7 +407,7 @@ export default function WealthVelocityMiniCard() {
             <Typography
               variant="caption"
               sx={{
-                color: colors.accent,
+                color: data ? colors.accent : "text.secondary",
                 fontWeight: 600,
                 fontSize: "0.65rem",
                 display: "flex",
@@ -353,7 +416,7 @@ export default function WealthVelocityMiniCard() {
               }}
             >
               <ShowChart sx={{ fontSize: 12 }} />
-              Click for detailed analysis →
+              {data ? "Click for detailed analysis →" : "Awaiting data input"}
             </Typography>
           </Box>
         </CardContent>

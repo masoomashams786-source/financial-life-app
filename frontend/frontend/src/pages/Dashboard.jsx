@@ -73,14 +73,20 @@ export default function Dashboard() {
           p: 8,
           pt: 2,
           display: "flex",
-          
-          justifyContent: "center", 
+
+          justifyContent: "center",
           alignItems: "center",
         }}
       >
-        <Container maxWidth="2xl" sx={{ mt: { xs: 2, md: 4 }, display: "flex",
-          justifyContent: "center", 
-          alignItems: "center", }}>
+        <Container
+          maxWidth="2xl"
+          sx={{
+            mt: { xs: 2, md: 4 },
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
           <Fade in={true} timeout={800}>
             <Stack spacing={{ xs: 2, md: 3 }}>
               {/* Top Row - Key Metrics (4 cards) */}
@@ -101,8 +107,6 @@ export default function Dashboard() {
                 <Grid item xs={12} sm={6} lg={3}>
                   <HowWeCalculateMiniCard />
                 </Grid>
-
-                
               </Grid>
 
               {/* Main Content Area - Two Columns */}
@@ -191,12 +195,11 @@ export default function Dashboard() {
 
                         {/* Insights Panel - 50% */}
                         <Grid size={{ xs: 12, lg: 6 }}>
-                          {!analysisError && analysis ? (
-                            <Box sx={{ height: "100%" }}>
-                              <InsightsPanel analysis={analysis} />
-                            </Box>
-                          ) : (
+                          {analysisLoading ? (
                             <Box
+                              display="flex"
+                              justifyContent="center"
+                              alignItems="center"
                               sx={{
                                 p: 4,
                                 bgcolor: "rgba(255, 255, 255, 0.03)",
@@ -205,7 +208,31 @@ export default function Dashboard() {
                                 minHeight: 250,
                                 height: "100%",
                               }}
-                            />
+                            >
+                              <CircularProgress
+                                size={32}
+                                sx={{ color: "primary.main" }}
+                              />
+                            </Box>
+                          ) : analysisError ? (
+                            <Alert
+                              severity="info"
+                              variant="outlined"
+                              sx={{
+                                color: "#bae6fd",
+                                borderColor: "#0369a1",
+                                "& .MuiAlert-icon": { color: "#38bdf8" },
+                                minHeight: 250,
+                                height: "100%",
+                              }}
+                            >
+                              Update your financial snapshot to see personalized
+                              insights
+                            </Alert>
+                          ) : (
+                            <Box sx={{ height: "100%" }}>
+                              <InsightsPanel analysis={analysis} />
+                            </Box>
                           )}
                         </Grid>
                       </Grid>

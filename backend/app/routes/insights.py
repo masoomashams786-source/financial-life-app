@@ -41,7 +41,7 @@ def get_financial_analysis():
         
         # Build user data
         user_data = {
-            'age': plans[0].user_current_age if plans else 30,
+            'age': snapshot.age,
             'monthly_income': snapshot.net_income,
             'side_income': snapshot.side_income,
             'monthly_expenses': snapshot.monthly_expenses,

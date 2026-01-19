@@ -19,6 +19,7 @@ import {
   CreditCard,
   AttachMoney,
   Edit,
+  Cake,
 } from "@mui/icons-material";
 import { getFinancialSnapshot } from "../api/financialSnapshot";
 import UpdateSnapshotModal from "./UpdateSnapshotModal";
@@ -70,7 +71,21 @@ export default function FinancialSnapshotCard() {
     }).format(value);
   };
 
+  const formatValue = (item) => {
+  if (item.label === "Current Age") {
+    return item.value;  // Don't format age as currency
+  }
+  return formatCurrency(item.value);
+};
+
   const snapshotItems = [
+    {
+      icon: <Cake sx={{ fontSize: 20 }} />, // Import Cake from @mui/icons-material
+      label: "Current Age",
+      value: snapshot?.age ?? "—",
+      suffix: "years",
+      color: colors.accent,
+    },
     {
       icon: <AccountBalanceWallet sx={{ fontSize: 20 }} />,
       label: "Net Income",
@@ -114,9 +129,26 @@ export default function FinancialSnapshotCard() {
 
   if (loading) {
     return (
-      <Card sx={{ borderRadius: 4, border: `1px solid ${colors.border}`, boxShadow: 'none' }}>
-        <CardContent sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 10 }}>
-          <CircularProgress thickness={5} size={40} sx={{ color: colors.accent }} />
+      <Card
+        sx={{
+          borderRadius: 4,
+          border: `1px solid ${colors.border}`,
+          boxShadow: "none",
+        }}
+      >
+        <CardContent
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            py: 10,
+          }}
+        >
+          <CircularProgress
+            thickness={5}
+            size={40}
+            sx={{ color: colors.accent }}
+          />
         </CardContent>
       </Card>
     );
@@ -135,22 +167,29 @@ export default function FinancialSnapshotCard() {
       >
         <CardContent sx={{ p: { xs: 2.5, md: 4 } }}>
           {/* Header Section */}
-          <Stack 
-            direction={{ xs: "column", sm: "row" }} 
-            justifyContent="space-between" 
-            alignItems={{ xs: "flex-start", sm: "center" }} 
-            spacing={2} 
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            justifyContent="space-between"
+            alignItems={{ xs: "flex-start", sm: "center" }}
+            spacing={2}
             mb={4}
           >
             <Box>
-              <Typography 
-                variant="h6" 
-                fontWeight={800} 
-                sx={{ color: colors.primary, letterSpacing: "-0.02em", lineHeight: 1.2 }}
+              <Typography
+                variant="h6"
+                fontWeight={800}
+                sx={{
+                  color: colors.primary,
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1.2,
+                }}
               >
                 Financial Snapshot
               </Typography>
-              <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+              <Typography
+                variant="body2"
+                sx={{ color: "text.secondary", mt: 0.5 }}
+              >
                 Real-time overview of your assets and liabilities
               </Typography>
             </Box>
@@ -173,15 +212,19 @@ export default function FinancialSnapshotCard() {
           </Stack>
 
           {error && (
-            <Alert severity="error" variant="outlined" sx={{ mb: 3, borderRadius: 2 }}>
+            <Alert
+              severity="error"
+              variant="outlined"
+              sx={{ mb: 3, borderRadius: 2 }}
+            >
               {error}
             </Alert>
           )}
 
           {/* Responsive Grid Layout */}
-          <Box 
-            display="grid" 
-            gridTemplateColumns={{ xs: "1fr", sm: "1fr 1fr" }} 
+          <Box
+            display="grid"
+            gridTemplateColumns={{ xs: "1fr", sm: "1fr 1fr" }}
             gap={2}
           >
             {snapshotItems.map((item, index) => (
@@ -201,8 +244,8 @@ export default function FinancialSnapshotCard() {
                     bgcolor: "#FFFFFF",
                     borderColor: alpha(item.color, 0.3),
                     boxShadow: `0 8px 16px ${alpha(item.color, 0.08)}`,
-                    transform: "translateY(-2px)"
-                  }
+                    transform: "translateY(-2px)",
+                  },
                 }}
               >
                 <Box
@@ -222,29 +265,38 @@ export default function FinancialSnapshotCard() {
                   {item.icon}
                 </Box>
                 <Box sx={{ minWidth: 0 }}>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
-                      color: "text.secondary", 
-                      fontWeight: 700, 
-                      textTransform: "uppercase", 
-                      fontSize: 10, 
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "text.secondary",
+                      fontWeight: 400,
+                      textTransform: "uppercase",
+                      fontSize: 10,
                       letterSpacing: "0.05em",
-                      display: "block"
+                      display: "block",
                     }}
                   >
                     {item.label}
                   </Typography>
                   <Box display="flex" alignItems="baseline" gap={0.5}>
-                    <Typography 
-                      variant="body1" 
-                      fontWeight={800} 
-                      sx={{ color: colors.primary, overflow: 'hidden', textOverflow: 'ellipsis' }}
+                    <Typography
+                      variant="body1"
+                      fontWeight={800}
+                      sx={{
+                        color: colors.primary,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
                     >
-                      {formatCurrency(item.value)}
+                      {formatValue(item)}
+                      
                     </Typography>
                     {item.suffix && (
-                      <Typography variant="caption" fontWeight={600} color="text.secondary">
+                      <Typography
+                        variant="caption"
+                        fontWeight={600}
+                        color="text.secondary"
+                      >
                         {item.suffix}
                       </Typography>
                     )}

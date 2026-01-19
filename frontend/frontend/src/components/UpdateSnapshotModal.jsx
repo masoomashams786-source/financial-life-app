@@ -14,11 +14,17 @@ import {
   Typography,
   Grid,
 } from "@mui/material";
-import { Close, Save } from "@mui/icons-material";
+import { Close, Save, Cake } from "@mui/icons-material";
 import { updateFinancialSnapshot } from "../api/financialSnapshot";
 
-export default function UpdateSnapshotModal({ open, onClose, currentData, onSuccess }) {
+export default function UpdateSnapshotModal({
+  open,
+  onClose,
+  currentData,
+  onSuccess,
+}) {
   const [formData, setFormData] = useState({
+    age: "",
     net_income: 0,
     monthly_expenses: 0,
     savings: 0,
@@ -38,6 +44,7 @@ export default function UpdateSnapshotModal({ open, onClose, currentData, onSucc
   useEffect(() => {
     if (currentData) {
       setFormData({
+        age: currentData.age || "",
         net_income: currentData.net_income || 0,
         monthly_expenses: currentData.monthly_expenses || 0,
         savings: currentData.savings || 0,
@@ -50,16 +57,30 @@ export default function UpdateSnapshotModal({ open, onClose, currentData, onSucc
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: parseFloat(value) || 0,
-    }));
+    // ✅ Handle age separately (integer, not float)
+    if (name === "age") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value === "" ? null : parseInt(value, 10),
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: parseFloat(value) || 0,
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    if (!formData.age || formData.age < 1 || formData.age > 120) {
+      setError("Please enter a valid age.");
+      setLoading(false);
+      return;
+    }
 
     try {
       await updateFinancialSnapshot(formData);
@@ -72,35 +93,43 @@ export default function UpdateSnapshotModal({ open, onClose, currentData, onSucc
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      maxWidth="sm" 
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: 4, boxShadow: "0 24px 48px rgba(0,0,0,0.2)" }
+        sx: { borderRadius: 4, boxShadow: "0 24px 48px rgba(0,0,0,0.2)" },
       }}
     >
-      <DialogTitle sx={{ 
-        m: 0, 
-        p: 3, 
-        display: "flex", 
-        justifyContent: "space-between", 
-        alignItems: "center",
-        bgcolor: colors.primary,
-        color: "white"
-      }}>
+      <DialogTitle
+        sx={{
+          m: 0,
+          p: 3,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          bgcolor: colors.primary,
+          color: "white",
+        }}
+      >
         <Box>
           <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>
             Update Snapshot
           </Typography>
-          <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.6)", fontWeight: 500 }}>
+          <Typography
+            variant="caption"
+            sx={{ color: "rgba(255,255,255,0.6)", fontWeight: 500 }}
+          >
             Adjust your current financial standing
           </Typography>
         </Box>
-        <IconButton 
-          onClick={onClose} 
-          sx={{ color: "white", "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}
+        <IconButton
+          onClick={onClose}
+          sx={{
+            color: "white",
+            "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
+          }}
         >
           <Close />
         </IconButton>
@@ -109,19 +138,73 @@ export default function UpdateSnapshotModal({ open, onClose, currentData, onSucc
       <form onSubmit={handleSubmit}>
         <DialogContent sx={{ p: 4, bgcolor: "#fafafa" }}>
           {error && (
-            <Alert severity="error" variant="filled" sx={{ mb: 3, borderRadius: 2 }}>
+            <Alert
+              severity="error"
+              variant="filled"
+              sx={{ mb: 3, borderRadius: 2 }}
+            >
               {error}
             </Alert>
           )}
 
           <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Your Current Age"
+                name="age"
+                type="number"
+                variant="outlined"
+                value={formData.age}
+                onChange={handleChange}
+                required
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Cake sx={{ color: colors.accent }} />
+                    </InputAdornment>
+                  ),
+                  sx: { borderRadius: 2, bgcolor: "white" },
+                }}
+                helperText="This is used for all retirement projections"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderColor: colors.accent,
+                  },
+                }}
+              />
+            </Grid>
             {[
-              { label: "Net Income", name: "net_income", helper: "After-tax monthly" },
-              { label: "Side Income", name: "side_income", helper: "Extra monthly earnings" },
-              { label: "Monthly Expenses", name: "monthly_expenses", helper: "Total bills & costs" },
-              { label: "Savings", name: "savings", helper: "Total cash liquid" },
-              { label: "Investments", name: "investments", helper: "Total market value" },
-              { label: "Total Debt", name: "debt", helper: "Liabilities & loans" },
+              {
+                label: "Net Income",
+                name: "net_income",
+                helper: "After-tax monthly",
+              },
+              {
+                label: "Side Income",
+                name: "side_income",
+                helper: "Extra monthly earnings",
+              },
+              {
+                label: "Monthly Expenses",
+                name: "monthly_expenses",
+                helper: "Total bills & costs",
+              },
+              {
+                label: "Savings",
+                name: "savings",
+                helper: "Total cash liquid",
+              },
+              {
+                label: "Investments",
+                name: "investments",
+                helper: "Total market value",
+              },
+              {
+                label: "Total Debt",
+                name: "debt",
+                helper: "Liabilities & loans",
+              },
             ].map((field) => (
               <Grid item xs={12} sm={6} key={field.name}>
                 <TextField
@@ -135,10 +218,14 @@ export default function UpdateSnapshotModal({ open, onClose, currentData, onSucc
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <Typography sx={{ color: "text.secondary", fontWeight: 700 }}>$</Typography>
+                        <Typography
+                          sx={{ color: "text.secondary", fontWeight: 700 }}
+                        >
+                          $
+                        </Typography>
                       </InputAdornment>
                     ),
-                    sx: { borderRadius: 2, bgcolor: "white" }
+                    sx: { borderRadius: 2, bgcolor: "white" },
                   }}
                   helperText={field.helper}
                 />
@@ -147,11 +234,21 @@ export default function UpdateSnapshotModal({ open, onClose, currentData, onSucc
           </Grid>
         </DialogContent>
 
-        <DialogActions sx={{ p: 3, bgcolor: "white", borderTop: `1px solid ${colors.border}` }}>
-          <Button 
-            onClick={onClose} 
+        <DialogActions
+          sx={{
+            p: 3,
+            bgcolor: "white",
+            borderTop: `1px solid ${colors.border}`,
+          }}
+        >
+          <Button
+            onClick={onClose}
             disabled={loading}
-            sx={{ color: "text.secondary", fontWeight: 600, textTransform: "none" }}
+            sx={{
+              color: "text.secondary",
+              fontWeight: 600,
+              textTransform: "none",
+            }}
           >
             Cancel
           </Button>
@@ -160,18 +257,22 @@ export default function UpdateSnapshotModal({ open, onClose, currentData, onSucc
             variant="contained"
             disabled={loading}
             startIcon={!loading && <Save />}
-            sx={{ 
-              minWidth: 120, 
-              borderRadius: 2, 
+            sx={{
+              minWidth: 120,
+              borderRadius: 2,
               py: 1,
               textTransform: "none",
               fontWeight: 700,
               bgcolor: colors.primary,
               boxShadow: "0 4px 12px rgba(10, 37, 64, 0.2)",
-              "&:hover": { bgcolor: "#1a365d" }
+              "&:hover": { bgcolor: "#1a365d" },
             }}
           >
-            {loading ? <CircularProgress size={24} color="inherit" /> : "Save Changes"}
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "Save Changes"
+            )}
           </Button>
         </DialogActions>
       </form>

@@ -17,6 +17,7 @@ def get_snapshot():
     if not snapshot:
         # Return default values if no snapshot exists
         return jsonify({
+            "age": 0,
             "net_income": 0.0,
             "monthly_expenses": 0.0,
             "savings": 0.0,
@@ -34,7 +35,7 @@ def update_snapshot():
     """Create or update user's financial snapshot"""
     user_id = get_jwt_identity()
     data = request.get_json()
-    
+    print("RAW DATA:", data)
     if not data:
         return jsonify({"error": "No input data provided"}), 400
     
@@ -51,6 +52,7 @@ def update_snapshot():
         
         if snapshot:
             # Update existing
+            snapshot.age = validated_data["age"]
             snapshot.net_income = validated_data["net_income"]
             snapshot.monthly_expenses = validated_data["monthly_expenses"]
             snapshot.savings = validated_data["savings"]
@@ -61,6 +63,7 @@ def update_snapshot():
             # Create new
             snapshot = FinancialSnapshot(
                 user_id=int(user_id),
+                age=validated_data["age"],
                 net_income=validated_data["net_income"],
                 monthly_expenses=validated_data["monthly_expenses"],
                 savings=validated_data["savings"],

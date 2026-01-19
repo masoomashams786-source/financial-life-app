@@ -47,7 +47,7 @@ def generate_full_projection():
         
         # Build user data dictionary
         user_data = {
-            'age': plans[0].user_current_age if plans else 30,  # Get from first plan or default
+            'age': snapshot.age,
             'monthly_income': snapshot.net_income,
             'side_income': snapshot.side_income,
             'monthly_expenses': snapshot.monthly_expenses,
@@ -105,9 +105,11 @@ def generate_all_scenarios():
         
         if not snapshot:
             return jsonify({"error": "Financial snapshot required"}), 404
+        if not snapshot.age:
+            return jsonify({"error": "Please update your age in Financial Snapshot"}), 400
         
         user_data = {
-            'age': plans[0].user_current_age if plans else 30,
+            'age': snapshot.age,
             'monthly_income': snapshot.net_income,
             'side_income': snapshot.side_income,
             'monthly_expenses': snapshot.monthly_expenses,

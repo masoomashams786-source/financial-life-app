@@ -21,6 +21,7 @@ import {
   Timeline,
   Assessment,
   EmojiEvents,
+   InfoOutlined,
 } from "@mui/icons-material";
 import {
   LineChart,
@@ -40,6 +41,7 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
+ 
 } from "recharts";
 
 export default function WealthVelocityModal({ open, onClose, data }) {
