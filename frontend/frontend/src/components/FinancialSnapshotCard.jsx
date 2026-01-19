@@ -278,10 +278,10 @@ export default function FinancialSnapshotCard() {
                   >
                     {item.label}
                   </Typography>
-                  <Box display="flex" alignItems="baseline" gap={0.5}>
+                  <Box display="flex" alignItems="baseline" gap={0.3}>
                     <Typography
                       variant="body1"
-                      fontWeight={800}
+                      fontWeight={600}
                       sx={{
                         color: colors.primary,
                         overflow: "hidden",
