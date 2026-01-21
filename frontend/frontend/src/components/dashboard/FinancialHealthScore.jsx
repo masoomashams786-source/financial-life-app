@@ -1,7 +1,27 @@
 import { Box, Typography, Card, CardContent, LinearProgress, Chip } from "@mui/material";
 import { TrendingUp, TrendingDown, Remove } from "@mui/icons-material";
+import useSWR from "swr";
+import { insightsFetcher } from "../../api/insights";
+import LoadingSpinner from "../../components/dashboard/LoadingSpinner";
+import ErrorAlert from "../../components/ErrorAlert";
 
-export default function FinancialHealthScore({ analysis }) {
+export default function FinancialHealthScore() {
+
+  const {
+    data,
+    error,
+    isLoading,
+  } = useSWR("/insights/analysis", insightsFetcher);
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+  if (error) {
+    return <ErrorAlert message="Failed to load financial health score" />;
+  }
+
+  // To avoid renaming the code to use "data" rather than "analysis", I'll just assign it to a variable for now
+  const analysis = data;
+
   if (!analysis || !analysis.health_score) {
     return null;
   }

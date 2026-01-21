@@ -10,8 +10,36 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import useSWR from "swr";
+import { projectionsFetcher } from "../../api/projections";
+import LoadingSpinner from "../../components/dashboard/LoadingSpinner";
+import ErrorAlert from "../../components/ErrorAlert";
 
-export default function NetWorthChart({ projections, loading }) {
+// Better extract into a utility function
+const formatCurrency = (value) => {
+  if (value >= 1000000) {
+    return `$${(value / 1000000).toFixed(1)}M`;
+  }
+  return `$${(value / 1000).toFixed(0)}K`;
+};
+
+export default function NetWorthChart() {
+
+  const {
+    data,
+    error: projectionsError,
+    isLoading: projectionsLoading,
+  } = useSWR("/projections/all-scenarios", projectionsFetcher);
+  if (projectionsLoading) {
+    return <LoadingSpinner />;
+  }
+  if (projectionsError) {
+    return <ErrorAlert message="Failed to load projections" />;
+  }
+
+  // To avoid renaming the code to use "data" rather than "projections", I'll just assign it to a variable for now
+  const projections = data;
+
   const chartData = useMemo(() => {
     if (!projections) return [];
 
@@ -43,12 +71,7 @@ export default function NetWorthChart({ projections, loading }) {
     return Array.from(dataMap.values()).sort((a, b) => a.age - b.age);
   }, [projections]);
 
-  const formatCurrency = (value) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}M`;
-    }
-    return `$${(value / 1000).toFixed(0)}K`;
-  };
+
 
   const CustomTooltip = ({ active, payload }) => {
     if (!active || !payload || !payload.length) return null;

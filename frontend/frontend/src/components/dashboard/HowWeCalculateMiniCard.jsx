@@ -1,8 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import {
   Box,
-  Card,
-  CardContent,
   Typography,
   alpha,
   Chip,
@@ -12,6 +10,7 @@ import {
   Calculate,
   ArrowForward,
 } from "@mui/icons-material";
+import MetricCard from "./MetricCard";
 
 export default function HowWeCalculateMiniCard() {
   const navigate = useNavigate();
@@ -27,84 +26,55 @@ export default function HowWeCalculateMiniCard() {
   };
 
   return (
-    <Card
+    <MetricCard
       onClick={handleClick}
-      sx={{
-        borderRadius: 3,
-        boxShadow: "0 8px 16px -6px rgba(10, 37, 64, 0.12)",
-        border: "1px solid #f1f5f9",
-        bgcolor: colors.surface,
-        height: "100%",
-        minHeight: 140,
-        width: "300px",
-        cursor: "pointer",
-        position: "relative",
-        overflow: "hidden",
-        transition: "all 0.2s ease-in-out",
-        "&:hover": {
-          transform: "translateY(-6px)",
-          boxShadow: "0 20px 32px -8px rgba(10, 37, 64, 0.2)",
-          borderColor: colors.purple,
-        },
-        "&:active": {
-          transform: "translateY(-2px)",
-        },
-      }}
+      borderColor="#f1f5f9"
+      hoverBorderColor={colors.purple}
+      background={
+        <>
+          <Box
+            sx={{
+              position: "absolute",
+              right: -15,
+              top: -15,
+              width: 160,
+              height: 160,
+              background: `radial-gradient(circle at center, ${alpha(
+                colors.purple,
+                0.12
+              )} 0%, transparent 70%)`,
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 0,
+            }}
+          >
+            <Calculate
+              sx={{
+                fontSize: 100,
+                color: colors.purple,
+                opacity: 0.08,
+                transform: "rotate(-15deg)",
+              }}
+            />
+          </Box>
+          <Box
+            sx={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              opacity: 0.03,
+              backgroundImage: `linear-gradient(${colors.primary} 1px, transparent 1px), linear-gradient(90deg, ${colors.primary} 1px, transparent 1px)`,
+              backgroundSize: "20px 20px",
+              zIndex: 0,
+            }}
+          />
+        </>
+      }
     >
-      {/* Dynamic Background Pattern */}
-      <Box
-        sx={{
-          position: "absolute",
-          right: -15,
-          top: -15,
-          width: 160,
-          height: 160,
-          background: `radial-gradient(circle at center, ${alpha(
-            colors.purple,
-            0.12
-          )} 0%, transparent 70%)`,
-          borderRadius: "50%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 0,
-        }}
-      >
-        <Calculate
-          sx={{
-            fontSize: 100,
-            color: colors.purple,
-            opacity: 0.08,
-            transform: "rotate(-15deg)",
-          }}
-        />
-      </Box>
-
-      {/* Subtle Grid Overlay */}
-      <Box
-        sx={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          opacity: 0.03,
-          backgroundImage: `linear-gradient(${colors.primary} 1px, transparent 1px), linear-gradient(90deg, ${colors.primary} 1px, transparent 1px)`,
-          backgroundSize: "20px 20px",
-          zIndex: 0,
-        }}
-      />
-
-      <CardContent
-        sx={{
-          p: 2.5,
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
         {/* Header */}
         <Box
           display="flex"
@@ -217,7 +187,6 @@ export default function HowWeCalculateMiniCard() {
             <ArrowForward sx={{ fontSize: 12, ml: 0.5 }} />
           </Typography>
         </Box>
-      </CardContent>
-    </Card>
+    </MetricCard>
   );
 }

@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import {
   Box,
-  Card,
-  CardContent,
   Typography,
   CircularProgress,
   alpha,
@@ -18,6 +16,7 @@ import { getFinancialSnapshot } from "../../api/financialSnapshot";
 import useSWR from "swr";
 import { financialPlansFetcher } from "../../api/financialPlans";
 import CashFlowModal from "./CashFlowModal";
+import MetricCard from "./MetricCard";
 
 export default function CashFlowMiniCard() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -119,25 +118,18 @@ export default function CashFlowMiniCard() {
 
   if (loading) {
     return (
-      <Card
-        sx={{
-          borderRadius: 3,
-          border: "1px solid #f1f5f9",
-          bgcolor: colors.surface,
-          height: "100%",
-          minHeight: 140,
-          cursor: "wait",
+      <MetricCard
+        clickable={false}
+        borderColor="#f1f5f9"
+        boxShadow="none"
+        cardSx={{ cursor: "wait" }}
+        contentSx={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
         }}
       >
-        <CardContent
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100%",
-          }}
-        >
           <CircularProgress
             size={28}
             thickness={5}
@@ -146,219 +138,193 @@ export default function CashFlowMiniCard() {
           <Typography variant="caption" color="text.secondary" sx={{ mt: 1.5 }}>
             Loading...
           </Typography>
-        </CardContent>
-      </Card>
+      </MetricCard>
     );
   }
 
   return (
     <>
-      <Card
+      <MetricCard
         onClick={() => setModalOpen(true)}
-        sx={{
-          borderRadius: 3,
-          boxShadow: "0 8px 16px -6px rgba(10, 37, 64, 0.12)",
-          border: "1px solid #f1f5f9",
-          bgcolor: colors.surface,
+        borderColor="#f1f5f9"
+        hoverBorderColor={colors.accent}
+        background={
+          <>
+            <Box
+              sx={{
+                position: "absolute",
+                right: -15,
+                top: -15,
+                width: 160,
+                height: 160,
+                background: `radial-gradient(circle at center, ${alpha(
+                  status.color,
+                  0.12
+                )} 0%, transparent 70%)`,
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 0,
+              }}
+            >
+              <AccountBalanceWallet
+                sx={{
+                  fontSize: 100,
+                  color: status.color,
+                  opacity: 0.08,
+                  transform: "rotate(-15deg)",
+                }}
+              />
+            </Box>
+            <Box
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                opacity: 0.03,
+                backgroundImage: `linear-gradient(${colors.primary} 1px, transparent 1px), linear-gradient(90deg, ${colors.primary} 1px, transparent 1px)`,
+                backgroundSize: "20px 20px",
+                zIndex: 0,
+              }}
+            />
+          </>
+        }
+        contentSx={{
+          p: 2.5,
           height: "100%",
-          minHeight: 140,
-          width: "300px",
-
-          cursor: "pointer",
+          display: "flex",
+          flexDirection: "column",
           position: "relative",
-          overflow: "hidden",
-          transition: "all 0.2s ease-in-out",
-          "&:hover": {
-            transform: "translateY(-6px)",
-            boxShadow: "0 20px 32px -8px rgba(10, 37, 64, 0.2)",
-            borderColor: colors.accent,
-          },
-          "&:active": {
-            transform: "translateY(-2px)",
-          },
+          zIndex: 1,
         }}
       >
-        {/* Background Pattern */}
-
-        {/* Dynamic Background Pattern */}
+        {/* Header */}
         <Box
-          sx={{
-            position: "absolute",
-            right: -15,
-            top: -15,
-            width: 160,
-            height: 160,
-            background: `radial-gradient(circle at center, ${alpha(
-              status.color,
-              0.12
-            )} 0%, transparent 70%)`,
-            borderRadius: "50%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 0,
-          }}
+          display="flex"
+          alignItems="center"
+          justifyContent="space-between"
+          mb={1.5}
         >
-          <AccountBalanceWallet
+          <Box display="flex" alignItems="center" gap={1}>
+            <Box
+              sx={{
+                width: 50,
+                height: 30,
+                borderRadius: "8px",
+                bgcolor: alpha(status.color, 0.1),
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {status.icon}
+            </Box>
+            <Box>
+              <Typography
+                variant="caption"
+                fontWeight={700}
+                sx={{ color: colors.primary, fontSize: "0.7rem" }}
+              >
+                Cash Flow
+              </Typography>
+              <Typography
+                variant="caption"
+                display="block"
+                sx={{
+                  color: "text.secondary",
+                  fontSize: "0.65rem",
+                  lineHeight: 1,
+                }}
+              >
+                Monthly
+              </Typography>
+            </Box>
+          </Box>
+
+          <Chip
+            label={status.label}
+            size="small"
             sx={{
-              fontSize: 100,
+              height: 18,
+              fontSize: "0.6rem",
+              fontWeight: 800,
+              bgcolor: status.bgColor,
               color: status.color,
-              opacity: 0.08,
-              transform: "rotate(-15deg)",
             }}
           />
         </Box>
 
-        {/* Subtle Grid Overlay */}
+        {/* Amount - Large and Prominent */}
         <Box
-          sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            opacity: 0.03,
-            backgroundImage: `linear-gradient(${colors.primary} 1px, transparent 1px), linear-gradient(90deg, ${colors.primary} 1px, transparent 1px)`,
-            backgroundSize: "20px 20px",
-            zIndex: 0,
-          }}
-        />
-
-        <CardContent
-          sx={{
-            p: 2.5,
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            position: "relative",
-            zIndex: 1,
-          }}
+          flex={1}
+          display="flex"
+          flexDirection="column"
+          justifyContent="center"
         >
-          {/* Header */}
-          <Box
-            display="flex"
-            alignItems="center"
-            justifyContent="space-between"
-            mb={1.5}
+          <Typography
+            variant="h5"
+            fontWeight={900}
+            sx={{
+              color: colors.primary,
+              letterSpacing: "-0.02em",
+              lineHeight: 1,
+              mb: 0.5,
+            }}
           >
-            <Box display="flex" alignItems="center" gap={1}>
-              <Box
-                sx={{
-                  width: 50,
-                  height: 30,
-                  borderRadius: "8px",
-                  bgcolor: alpha(status.color, 0.1),
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {status.icon}
-              </Box>
-              <Box>
-                <Typography
-                  variant="caption"
-                  fontWeight={700}
-                  sx={{ color: colors.primary, fontSize: "0.7rem" }}
-                >
-                  Cash Flow
-                </Typography>
-                <Typography
-                  variant="caption"
-                  display="block"
-                  sx={{
-                    color: "text.secondary",
-                    fontSize: "0.65rem",
-                    lineHeight: 1,
-                  }}
-                >
-                  Monthly
-                </Typography>
-              </Box>
-            </Box>
+            {cashFlow < 0 ? "-" : "+"}
+            {formatCurrency(cashFlow)}
+          </Typography>
 
+          {/* Status Indicator */}
+          <Box display="flex" alignItems="center" gap={0.75}>
+            <Typography
+              variant="body2"
+              fontWeight={700}
+              sx={{ color: status.color }}
+            >
+              {status.label}
+            </Typography>
             <Chip
-              label={status.label}
+              label={`${formatCurrency(Math.abs(cashFlow * 12))}/yr`}
               size="small"
               sx={{
-                height: 18,
-                fontSize: "0.6rem",
-                fontWeight: 800,
-                bgcolor: status.bgColor,
+                height: 20,
+                fontSize: "0.7rem",
+                fontWeight: 700,
+                bgcolor: alpha(status.color, 0.12),
                 color: status.color,
               }}
             />
           </Box>
+        </Box>
 
-          {/* Amount - Large and Prominent */}
-          <Box
-            flex={1}
-            display="flex"
-            flexDirection="column"
-            justifyContent="center"
-          >
-            <Typography
-              variant="h5"
-              fontWeight={900}
-              sx={{
-                color: colors.primary,
-                letterSpacing: "-0.02em",
-                lineHeight: 1,
-                mb: 0.5,
-              }}
-            >
-              {cashFlow < 0 ? "-" : "+"}
-              {formatCurrency(cashFlow)}
-            </Typography>
-
-            {/* Status Indicator */}
-            <Box display="flex" alignItems="center" gap={0.75}>
-              <Typography
-                variant="body2"
-                fontWeight={700}
-                sx={{ color: status.color }}
-              >
-                {status.label}
-              </Typography>
-              <Chip
-                label={`${formatCurrency(Math.abs(cashFlow * 12))}/yr`}
-                size="small"
-                sx={{
-                  height: 20,
-                  fontSize: "0.7rem",
-                  fontWeight: 700,
-                  bgcolor: alpha(status.color, 0.12),
-                  color: status.color,
-                }}
-              />
-            </Box>
-          </Box>
-
-          {/* Footer Hint */}
-          <Box
+        {/* Footer Hint */}
+        <Box
+          sx={{
+            pt: 1.5,
+            mt: 1.5,
+            borderTop: "1px solid #f0f0f0",
+          }}
+        >
+          <Typography
+            variant="caption"
             sx={{
-              pt: 1.5,
-              mt: 1.5,
-              borderTop: "1px solid #f0f0f0",
+              color: colors.accent,
+              fontWeight: 600,
+              fontSize: "0.65rem",
+              display: "flex",
+              alignItems: "center",
+              gap: 0.5,
             }}
           >
-            <Typography
-              variant="caption"
-              sx={{
-                color: colors.accent,
-                fontWeight: 600,
-                fontSize: "0.65rem",
-                display: "flex",
-                alignItems: "center",
-                gap: 0.5,
-              }}
-            >
-              <ShowChart sx={{ fontSize: 12 }} />
-              Click for detailed view →
-            </Typography>
-          </Box>
-        </CardContent>
-      </Card>
+            <ShowChart sx={{ fontSize: 12 }} />
+            Click for detailed view →
+          </Typography>
+        </Box>
+      </MetricCard>
 
       <CashFlowModal
         open={modalOpen}

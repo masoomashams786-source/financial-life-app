@@ -18,10 +18,28 @@ import {
   CalendarToday,
   Lightbulb,
 } from "@mui/icons-material";
+import useSWR from "swr";
+import { insightsFetcher } from "../../api/insights";
+import LoadingSpinner from "../../components/dashboard/LoadingSpinner";
+import ErrorAlert from "../../components/ErrorAlert";
 
-export default function InsightsPanel({ analysis, loading, error }) {
+export default function InsightsPanel() {
+  const {
+    data,
+    error,
+    isLoading,
+  } = useSWR("/insights/analysis", insightsFetcher);
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+  if (error) {
+    return <ErrorAlert message="Failed to load insights" />;
+  }
+
+  // To avoid renaming the code to use "data" rather than "analysis", I'll just assign it to a variable for now
+  const analysis = data;
   // Loading state
-  if (loading) {
+  if (isLoading) {
     return (
       <Card sx={{ borderRadius: 3, boxShadow: 3, height: "100%" }}>
         <CardContent
@@ -44,7 +62,7 @@ export default function InsightsPanel({ analysis, loading, error }) {
   }
 
   // Error state
-  if (error || !analysis) {
+  if (error) {
     return (
       <Card sx={{ borderRadius: 3, boxShadow: 3, height: "100%" }}>
         <CardContent
