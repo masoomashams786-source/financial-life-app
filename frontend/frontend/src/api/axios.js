@@ -1,14 +1,14 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  baseURL: import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api",
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 30000, // ✅ INCREASED to 30 seconds (was 15 seconds)
+  timeout: 30000,
 });
 
-// ✅ REQUEST INTERCEPTOR - Automatically attach JWT token
+// REQUEST INTERCEPTOR - Attach JWT token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -17,37 +17,24 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    console.error("Request interceptor error:", error);
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// ✅ RESPONSE INTERCEPTOR - Handle errors globally
+// RESPONSE INTERCEPTOR - Handle errors globally
+// NOTE: 401 handling is delegated to AuthContext to avoid conflicts
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle 401 Unauthorized
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
+    // Log network/timeout errors for debugging
+    if (error.code === "ECONNABORTED") {
+      console.error("[API] Request timeout - server is taking too long");
+    } else if (!error.response) {
+      console.error("[API] Network error - server may be down");
+    } else if (error.response.status >= 500) {
+      console.error("[API] Server error:", error.response?.data?.message || "Internal server error");
     }
     
-    // Handle timeout
-    if (error.code === 'ECONNABORTED') {
-      console.error('Request timeout - server is taking too long');
-    }
-    
-    // Handle network errors
-    if (!error.response) {
-      console.error('Network error - server may be down');
-    }
-    
-    // Handle 500 errors
-    if (error.response?.status === 500) {
-      console.error('Server error:', error.response?.data?.message || 'Internal server error');
-    }
-    
+    // Always reject - let calling code decide how to handle
     return Promise.reject(error);
   }
 );
