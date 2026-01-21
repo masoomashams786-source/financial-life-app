@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import useSWR, { mutate } from "swr";
 import {
   Card,
   CardContent,
@@ -21,14 +22,21 @@ import {
   Edit,
   Cake,
 } from "@mui/icons-material";
-import { getFinancialSnapshot } from "../api/financialSnapshot";
+import { fetcher } from "../api/fetcher";
 import UpdateSnapshotModal from "./UpdateSnapshotModal";
 
 export default function FinancialSnapshotCard() {
-  const [snapshot, setSnapshot] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+
+  // ✅ Use SWR instead of manual state management
+  const { data: snapshot, error, isLoading } = useSWR(
+    "/financial-snapshot",
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+    }
+  );
 
   const colors = {
     primary: "#0A2540",
@@ -41,26 +49,13 @@ export default function FinancialSnapshotCard() {
     softBg: "#F8FAFC",
   };
 
-  useEffect(() => {
-    fetchSnapshot();
-  }, []);
-
-  const fetchSnapshot = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const response = await getFinancialSnapshot();
-      setSnapshot(response.data);
-    } catch (err) {
-      setError("Failed to load financial data");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleUpdateSuccess = () => {
     setModalOpen(false);
-    fetchSnapshot();
+    // ✅ Trigger SWR revalidation to refresh the data
+    mutate("/financial-snapshot");
+    // ✅ Also refresh projections and insights since they depend on snapshot
+    mutate("/projections/all-scenarios");
+    mutate("/insights/analysis");
   };
 
   const formatCurrency = (value) => {
@@ -72,15 +67,15 @@ export default function FinancialSnapshotCard() {
   };
 
   const formatValue = (item) => {
-  if (item.label === "Current Age") {
-    return item.value;  // Don't format age as currency
-  }
-  return formatCurrency(item.value);
-};
+    if (item.label === "Current Age") {
+      return item.value;
+    }
+    return formatCurrency(item.value);
+  };
 
   const snapshotItems = [
     {
-      icon: <Cake sx={{ fontSize: 20 }} />, // Import Cake from @mui/icons-material
+      icon: <Cake sx={{ fontSize: 20 }} />,
       label: "Current Age",
       value: snapshot?.age ?? "—",
       suffix: "years",
@@ -127,7 +122,7 @@ export default function FinancialSnapshotCard() {
     },
   ];
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Card
         sx={{
@@ -217,7 +212,7 @@ export default function FinancialSnapshotCard() {
               variant="outlined"
               sx={{ mb: 3, borderRadius: 2 }}
             >
-              {error}
+              Failed to load financial data
             </Alert>
           )}
 
@@ -289,7 +284,6 @@ export default function FinancialSnapshotCard() {
                       }}
                     >
                       {formatValue(item)}
-                      
                     </Typography>
                     {item.suffix && (
                       <Typography
