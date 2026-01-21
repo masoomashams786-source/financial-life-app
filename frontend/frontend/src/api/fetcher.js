@@ -1,11 +1,7 @@
 import api from "./axios";
 
-// fetcher function for SWR
-export const fetcher = (url) => {
-  const token = localStorage.getItem("token");
-  return api.get(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }).then(res => res.data);
-};
+/**
+ * SWR fetcher using axios instance
+ * Token is automatically attached by axios interceptor
+ */
+export const fetcher = (url) => api.get(url).then((res) => res.data);
