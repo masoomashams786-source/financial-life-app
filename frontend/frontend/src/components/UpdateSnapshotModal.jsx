@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { Close, Save, Cake } from "@mui/icons-material";
 import { updateFinancialSnapshot } from "../api/financialSnapshot";
+import { mutate } from "swr"; // ✅ Import mutate
 
 export default function UpdateSnapshotModal({
   open,
@@ -57,7 +58,7 @@ export default function UpdateSnapshotModal({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // ✅ Handle age separately (integer, not float)
+    // Handle age separately (integer, not float)
     if (name === "age") {
       setFormData((prev) => ({
         ...prev,
@@ -84,6 +85,12 @@ export default function UpdateSnapshotModal({
 
     try {
       await updateFinancialSnapshot(formData);
+      
+      // ✅ Trigger SWR revalidation for all affected endpoints
+      mutate("/financial-snapshot");
+      mutate("/insights/analysis");
+      mutate("/projections/all-scenarios");
+      
       onSuccess();
     } catch (err) {
       setError(err.response?.data?.error || "Failed to update snapshot");

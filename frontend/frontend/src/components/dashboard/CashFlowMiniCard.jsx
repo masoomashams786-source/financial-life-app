@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import {
   Box,
   Card,
@@ -14,25 +14,13 @@ import {
   AccountBalanceWallet,
   ShowChart,
 } from "@mui/icons-material";
-import { getFinancialSnapshot } from "../../api/financialSnapshot";
 import useSWR from "swr";
 import { financialPlansFetcher } from "../../api/financialPlans";
+import { fetcher } from "../../api/fetcher";
 import CashFlowModal from "./CashFlowModal";
 
 export default function CashFlowMiniCard() {
   const [modalOpen, setModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [cashFlow, setCashFlow] = useState(0);
-  const [breakdown, setBreakdown] = useState({
-    totalIncome: 0,
-    netIncome: 0,
-    sideIncome: 0,
-    totalExpenses: 0,
-    monthlyExpenses: 0,
-    planContributions: 0,
-  });
-
-  const { data: plans } = useSWR("/financial-plans", financialPlansFetcher);
 
   const colors = {
     primary: "#0A2540",
@@ -43,43 +31,56 @@ export default function CashFlowMiniCard() {
     surface: "#FFFFFF",
   };
 
-  useEffect(() => {
-    fetchCashFlowData();
-  }, [plans]);
+  // ✅ Use SWR for both snapshot and plans
+  const { data: snapshot, isLoading: snapshotLoading } = useSWR(
+    "/financial-snapshot",
+    fetcher
+  );
+  const { data: plans, isLoading: plansLoading } = useSWR(
+    "/financial-plans",
+    financialPlansFetcher
+  );
 
-  const fetchCashFlowData = async () => {
-    setLoading(true);
-    try {
-      const response = await getFinancialSnapshot();
-      const data = response.data;
+  // ✅ Calculate cash flow using useMemo to avoid recalculation on every render
+  const { cashFlow, breakdown } = useMemo(() => {
+    if (!snapshot) {
+      return {
+        cashFlow: 0,
+        breakdown: {
+          totalIncome: 0,
+          netIncome: 0,
+          sideIncome: 0,
+          totalExpenses: 0,
+          monthlyExpenses: 0,
+          planContributions: 0,
+        },
+      };
+    }
 
-      const netIncome = data.net_income || 0;
-      const sideIncome = data.side_income || 0;
-      const totalIncome = netIncome + sideIncome;
+    const netIncome = snapshot.net_income || 0;
+    const sideIncome = snapshot.side_income || 0;
+    const totalIncome = netIncome + sideIncome;
 
-      const planContributions = plans
-        ? plans.reduce((sum, plan) => sum + (plan.monthly_contribution || 0), 0)
-        : 0;
+    const planContributions = plans
+      ? plans.reduce((sum, plan) => sum + (plan.monthly_contribution || 0), 0)
+      : 0;
 
-      const monthlyExpenses = data.monthly_expenses || 0;
-      const totalExpenses = monthlyExpenses + planContributions;
-      const netCashFlow = totalIncome - totalExpenses;
+    const monthlyExpenses = snapshot.monthly_expenses || 0;
+    const totalExpenses = monthlyExpenses + planContributions;
+    const netCashFlow = totalIncome - totalExpenses;
 
-      setCashFlow(netCashFlow);
-      setBreakdown({
+    return {
+      cashFlow: netCashFlow,
+      breakdown: {
         totalIncome,
         netIncome,
         sideIncome,
         totalExpenses,
         monthlyExpenses,
         planContributions,
-      });
-    } catch (err) {
-      console.error("Failed to fetch cash flow data:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+      },
+    };
+  }, [snapshot, plans]);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("en-US", {
@@ -116,6 +117,7 @@ export default function CashFlowMiniCard() {
   };
 
   const status = getCashFlowStatus();
+  const loading = snapshotLoading || plansLoading;
 
   if (loading) {
     return (
@@ -163,7 +165,6 @@ export default function CashFlowMiniCard() {
           height: "100%",
           minHeight: 140,
           width: "300px",
-
           cursor: "pointer",
           position: "relative",
           overflow: "hidden",
@@ -178,8 +179,6 @@ export default function CashFlowMiniCard() {
           },
         }}
       >
-        {/* Background Pattern */}
-
         {/* Dynamic Background Pattern */}
         <Box
           sx={{
