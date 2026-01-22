@@ -22,7 +22,7 @@ class InsightEngine:
 
         return {
             "metrics": metrics,
-            "health_score": self._calculate_health_score(metrics),
+            "health_score": self._calculate_health_score(metrics, user_data),
             "strengths": self._identify_strengths(metrics, user_data),
             "vulnerabilities": self._identify_vulnerabilities(metrics, user_data),
             "immediate_actions": self._generate_immediate_actions(metrics, user_data),
@@ -45,7 +45,6 @@ class InsightEngine:
         actual_savings_rate = savings / (income * 12) if income else 0
         months_covered = savings / expenses if expenses else 0
         dti = (debt / (income * 12)) if income else 0
-        diversified = len(plans) >= 2 or investments > 0
 
         return {
             "income": income,
@@ -58,13 +57,12 @@ class InsightEngine:
             "actual_savings_rate": actual_savings_rate,
             "months_covered": months_covered,
             "debt_to_income": dti,
-            "diversified": diversified,
             "net_worth": savings + investments - debt,
         }
 
     # ================= HEALTH SCORE ================= #
 
-    def _calculate_health_score(self, m: Dict[str, Any]) -> Dict[str, Any]:
+    def _calculate_health_score(self, m: Dict[str, Any], u: Dict[str, Any]) -> Dict[str, Any]:
         score = 0
         breakdown = {}
 
@@ -90,10 +88,12 @@ class InsightEngine:
         elif m["debt_to_income"] <= 0.50: add("debt", 10, 20)
         else: add("debt", 5, 20)
 
-        # Investments & Diversification (20)
-        if m["diversified"]: add("diversification", 20, 20)
-        elif m["surplus"] > 0: add("diversification", 10, 20)
-        else: add("diversification", 0, 20)
+        # Investments & Diversification (20) ✅ Fixed version
+        diversification_score = self._calculate_diversification_score(
+            u.get("plans", []),
+            m["investments"]
+        )
+        add("diversification", diversification_score, 20)
 
         # Income Stability (10)
         if m["income"] > 0: add("income", 10, 10)
@@ -101,6 +101,29 @@ class InsightEngine:
 
         rating = "Excellent" if score >= 80 else "Good" if score >= 65 else "Fair" if score >= 50 else "Needs Improvement"
         return {"score": score, "rating": rating, "breakdown": breakdown}
+
+    # ================= NEW HELPER ================= #
+    def _calculate_diversification_score(self, plans, investments):
+        score = 0
+
+        # +8: Taxable investments
+        if investments > 0:
+            score += 8
+
+        # +8: Retirement account (401k / IRA / Roth)
+        retirement_keywords = ("401k", "ira", "roth")
+        has_retirement = any(
+            any(k in p["plan_type"].lower() for k in retirement_keywords)
+            for p in plans
+        )
+        if has_retirement:
+            score += 8
+
+        # +4: Two or more different plan types
+        if len({p["plan_type"] for p in plans}) >= 2:
+            score += 4
+
+        return min(score, 20)
 
     # ================= STRENGTHS ================= #
 
@@ -118,8 +141,13 @@ class InsightEngine:
         if m["debt_to_income"] <= 0.36:
             s.append({"title": "Low Debt Burden", "description": f"Debt-to-income ratio of {m['debt_to_income']:.0%} is excellent", "category": "debt"})
 
-        if m["diversified"]:
-            s.append({"title": "Diversified Investments", "description": "Multiple assets reduce risk and improve long-term stability", "category": "investments"})
+        # Updated: Use new diversification score for description
+        diversification_score = self._calculate_diversification_score(
+            u.get("plans", []),
+            m["investments"]
+        )
+        if diversification_score > 0:
+            s.append({"title": "Diversified Investments", "description": f"Investment diversification score: {diversification_score}/20", "category": "investments"})
 
         return s
 
@@ -138,8 +166,13 @@ class InsightEngine:
         if m["debt_to_income"] > 0.36:
             v.append({"title": "High Debt-to-Income Ratio", "severity": "high", "description": f"{m['debt_to_income']:.0%} exceeds recommended 36% threshold"})
 
-        if not m["diversified"]:
-            v.append({"title": "Lack of Investment Diversification", "severity": "medium", "description": "No diversified investment strategy in place"})
+        # Updated vulnerability check for diversification
+        diversification_score = self._calculate_diversification_score(
+            u.get("plans", []),
+            m["investments"]
+        )
+        if diversification_score < 20:
+            v.append({"title": "Incomplete Investment Diversification", "severity": "medium", "description": f"Diversification score is {diversification_score}/20, consider adding taxable investments, retirement accounts, or multiple plan types"})
 
         if u.get("side_income", 0) == 0:
             v.append({"title": "Single Point of Income Failure", "severity": "low", "description": "No side income — vulnerable if primary income is lost"})
