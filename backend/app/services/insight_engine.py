@@ -44,7 +44,7 @@ class InsightEngine:
         # Calculate monthly surplus (what's left after expenses)
         monthly_surplus = total_income - monthly_expenses
         
-        # ✅ FIX: Savings rate = monthly surplus / monthly income (flow, not stock)
+        # FIX: Savings rate = monthly surplus / monthly income (flow, not stock)
         savings_rate = monthly_surplus / total_income if total_income > 0 else 0
         
         # Emergency fund coverage in months
@@ -66,7 +66,7 @@ class InsightEngine:
             "investments": investments,
             "debt": debt,
             "monthly_surplus": monthly_surplus,
-            "savings_rate": savings_rate,  # ✅ This is now CORRECT
+            "savings_rate": savings_rate,  
             "months_covered": months_covered,
             "debt_to_income": debt_to_income,
             "side_income_pct": side_income_pct,
@@ -84,7 +84,7 @@ class InsightEngine:
             score += val
             breakdown[name] = {"score": val, "max": maxv, "status": status}
 
-        # ✅ 1. Emergency Fund (20 points)
+        #  1. Emergency Fund (20 points)
         months = m["months_covered"]
         if months >= 6:
             add("emergency_fund", 20, 20, "excellent")
@@ -95,7 +95,7 @@ class InsightEngine:
         else:
             add("emergency_fund", 5, 20, "poor")
 
-        # ✅ 2. Debt Management (25 points)
+        # 2. Debt Management (25 points)
         dti = m["debt_to_income"]
         if m["debt"] == 0:
             add("debt", 25, 25, "excellent")
@@ -108,7 +108,7 @@ class InsightEngine:
         else:
             add("debt", 8, 25, "poor")
 
-        # ✅ 3. Savings Rate (20 points) - NOW CORRECT
+        # 3. Savings Rate (20 points) - NOW CORRECT
         sr = m["savings_rate"]
         if sr >= 0.40:
             add("savings", 20, 20, "elite")
@@ -121,12 +121,12 @@ class InsightEngine:
         else:
             add("savings", 5, 20, "poor")
 
-        # ✅ 4. Investment Diversification (20 points)
+        #  4. Investment Diversification (20 points)
         div_score = self._calculate_diversification_score(u.get("plans", []), m["investments"])
         status = "excellent" if div_score >= 18 else "good" if div_score >= 12 else "fair" if div_score >= 6 else "poor"
         add("diversification", div_score, 20, status)
 
-        # ✅ 5. Income Stability (15 points)
+        #  5. Income Stability (15 points)
         income_score = 10  # Base for having income
         if m["side_income_pct"] >= 0.05:
             income_score = 15
@@ -143,7 +143,7 @@ class InsightEngine:
 
         return {"score": score, "rating": rating, "breakdown": breakdown}
 
-    # ✅ NEW: Investment Diversification Scoring
+    # NEW: Investment Diversification Scoring
     def _calculate_diversification_score(self, plans: List[Dict], investments: float) -> int:
         """
         Calculate investment diversification score (0-20 points)
@@ -177,7 +177,7 @@ class InsightEngine:
     def _identify_strengths(self, m, u):
         s = []
 
-        # ✅ Savings rate strength (now using correct calculation)
+        #  Savings rate strength (now using correct calculation)
         if m["savings_rate"] >= 0.40:
             s.append({"title": "Elite Savings Rate", "description": f"Your {m['savings_rate']:.0%} monthly savings rate puts you in the top 10% nationally", "category": "savings"})
         elif m["savings_rate"] >= 0.20:
@@ -216,7 +216,7 @@ class InsightEngine:
                 "gap": gap
             })
 
-        # ✅ Now using correct savings_rate
+        #  Now using correct savings_rate
         if m["savings_rate"] < 0.10:
             v.append({
                 "title": "Low Savings Rate", 
