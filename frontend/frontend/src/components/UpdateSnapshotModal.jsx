@@ -86,10 +86,11 @@ export default function UpdateSnapshotModal({
     try {
       await updateFinancialSnapshot(formData);
       
-      // ✅ Trigger SWR revalidation for all affected endpoints
+      // Trigger SWR revalidation for all affected endpoints
       mutate("/financial-snapshot");
       mutate("/insights/analysis");
       mutate("/projections/all-scenarios");
+      mutate("/wealth-velocity");
       
       onSuccess();
     } catch (err) {
