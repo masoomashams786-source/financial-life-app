@@ -33,30 +33,43 @@ class InsightEngine:
     # ================= METRICS ================= #
 
     def _calculate_core_metrics(self, u: Dict[str, Any]) -> Dict[str, Any]:
-        income = u.get("monthly_income", 0) + u.get("side_income", 0)
-        expenses = u.get("monthly_expenses", 0)
+        monthly_income = u.get("monthly_income", 0)
+        side_income = u.get("side_income", 0)
+        total_income = monthly_income + side_income
+        monthly_expenses = u.get("monthly_expenses", 0)
         savings = u.get("savings", 0)
         investments = u.get("investments", 0)
         debt = u.get("debt", 0)
-        plans = u.get("plans", [])
-
-        surplus = income - expenses
-        savings_rate_capacity = surplus / income if income else 0
-        actual_savings_rate = savings / (income * 12) if income else 0
-        months_covered = savings / expenses if expenses else 0
-        dti = (debt / (income * 12)) if income else 0
+        
+        # Calculate monthly surplus (what's left after expenses)
+        monthly_surplus = total_income - monthly_expenses
+        
+        # ✅ FIX: Savings rate = monthly surplus / monthly income (flow, not stock)
+        savings_rate = monthly_surplus / total_income if total_income > 0 else 0
+        
+        # Emergency fund coverage in months
+        months_covered = savings / monthly_expenses if monthly_expenses > 0 else 0
+        
+        # Debt-to-income ratio (annual debt / annual income)
+        annual_income = total_income * 12
+        debt_to_income = debt / annual_income if annual_income > 0 else 0
+        
+        # Side income percentage
+        side_income_pct = side_income / total_income if total_income > 0 else 0
 
         return {
-            "income": income,
-            "expenses": expenses,
+            "monthly_income": monthly_income,
+            "side_income": side_income,
+            "total_income": total_income,
+            "monthly_expenses": monthly_expenses,
             "savings": savings,
             "investments": investments,
             "debt": debt,
-            "surplus": surplus,
-            "capacity_rate": savings_rate_capacity,
-            "actual_savings_rate": actual_savings_rate,
+            "monthly_surplus": monthly_surplus,
+            "savings_rate": savings_rate,  # ✅ This is now CORRECT
             "months_covered": months_covered,
-            "debt_to_income": dti,
+            "debt_to_income": debt_to_income,
+            "side_income_pct": side_income_pct,
             "net_worth": savings + investments - debt,
         }
 
@@ -66,66 +79,61 @@ class InsightEngine:
         score = 0
         breakdown = {}
 
-        def add(name, val, maxv):
+        def add(name, val, maxv, status):
             nonlocal score
             score += val
-            breakdown[name] = {"score": val, "max": maxv}
+            breakdown[name] = {"score": val, "max": maxv, "status": status}
 
-        # 1️Emergency Fund (20)
-        if m["months_covered"] >= 6:
-            add("emergency_fund", 20, 20)
-        elif m["months_covered"] >= 3:
-            add("emergency_fund", 15, 20)
-        elif m["months_covered"] >= 1:
-            add("emergency_fund", 10, 20)
+        # ✅ 1. Emergency Fund (20 points)
+        months = m["months_covered"]
+        if months >= 6:
+            add("emergency_fund", 20, 20, "excellent")
+        elif months >= 3:
+            add("emergency_fund", 15, 20, "good")
+        elif months >= 1:
+            add("emergency_fund", 10, 20, "fair")
         else:
-            add("emergency_fund", 5, 20)
+            add("emergency_fund", 5, 20, "poor")
 
-        # 2️ Debt Management (25)
+        # ✅ 2. Debt Management (25 points)
         dti = m["debt_to_income"]
         if m["debt"] == 0:
-            add("debt", 25, 25)
+            add("debt", 25, 25, "excellent")
         elif dti < 0.10:
-            add("debt", 22, 25)
+            add("debt", 22, 25, "excellent")
         elif dti < 0.20:
-            add("debt", 18, 25)
+            add("debt", 18, 25, "good")
         elif dti <= 0.36:
-            add("debt", 15, 25)
+            add("debt", 15, 25, "fair")
         else:
-            add("debt", 8, 25)
+            add("debt", 8, 25, "poor")
 
-        # 3️ Savings Rate (20)
-        sr = m["actual_savings_rate"]
+        # ✅ 3. Savings Rate (20 points) - NOW CORRECT
+        sr = m["savings_rate"]
         if sr >= 0.40:
-            add("savings", 20, 20)
+            add("savings", 20, 20, "elite")
         elif sr >= 0.30:
-            add("savings", 18, 20)
+            add("savings", 18, 20, "excellent")
         elif sr >= 0.20:
-            add("savings", 15, 20)
+            add("savings", 15, 20, "good")
         elif sr >= 0.10:
-            add("savings", 10, 20)
+            add("savings", 10, 20, "fair")
         else:
-            add("savings", 5, 20)
+            add("savings", 5, 20, "poor")
 
-        # 4️Investment Diversification (20)
-        diversification_score = self._calculate_diversification_score(
-            u.get("plans", []),
-            m["investments"]
-        )
-        add("diversification", diversification_score, 20)
+        # ✅ 4. Investment Diversification (20 points)
+        div_score = self._calculate_diversification_score(u.get("plans", []), m["investments"])
+        status = "excellent" if div_score >= 18 else "good" if div_score >= 12 else "fair" if div_score >= 6 else "poor"
+        add("diversification", div_score, 20, status)
 
-        # 5️Income Stability (15)
-        income_score = 0
-        if m["income"] > 0:
-            income_score = 10
+        # ✅ 5. Income Stability (15 points)
+        income_score = 10  # Base for having income
+        if m["side_income_pct"] >= 0.05:
+            income_score = 15
+        status = "excellent" if income_score == 15 else "good"
+        add("income", income_score, 15, status)
 
-            total_income = m["income"]
-            side_income = u.get("side_income", 0)
-            if total_income > 0 and (side_income / total_income) >= 0.05:
-                income_score += 5
-
-        add("income", income_score, 15)
-
+        # Overall rating
         rating = (
             "Excellent" if score >= 85
             else "Good" if score >= 70
@@ -135,29 +143,60 @@ class InsightEngine:
 
         return {"score": score, "rating": rating, "breakdown": breakdown}
 
+    # ✅ NEW: Investment Diversification Scoring
+    def _calculate_diversification_score(self, plans: List[Dict], investments: float) -> int:
+        """
+        Calculate investment diversification score (0-20 points)
+        
+        Criteria:
+        - Have taxable investments: +8 points
+        - Have retirement account (401k/IRA): +8 points  
+        - Have 2+ different plan types: +4 points
+        """
+        score = 0
+        
+        # +8 points for taxable investments
+        if investments > 0:
+            score += 8
+        
+        # +8 points for retirement account
+        retirement_types = {'Roth IRA', 'Traditional 401k', 'Roth 401k', 'Solo 401k'}
+        has_retirement = any(p.get('plan_type') in retirement_types for p in plans)
+        if has_retirement:
+            score += 8
+        
+        # +4 points for 2+ different plan types
+        unique_plans = len(set(p.get('plan_type') for p in plans))
+        if unique_plans >= 2:
+            score += 4
+        
+        return score
+
     # ================= STRENGTHS ================= #
 
     def _identify_strengths(self, m, u):
         s = []
 
-        if m["actual_savings_rate"] >= 0.20:
-            s.append({"title": "Elite Savings Rate", "description": f"Your {m['actual_savings_rate']:.0%} savings rate puts you in the top 10% nationally", "category": "savings"})
-        elif m["capacity_rate"] >= 0.25 and m["savings"] == 0:
-            s.append({"title": "High Savings Potential", "description": "Strong surplus but no savings yet — you can build wealth quickly", "category": "savings"})
+        # ✅ Savings rate strength (now using correct calculation)
+        if m["savings_rate"] >= 0.40:
+            s.append({"title": "Elite Savings Rate", "description": f"Your {m['savings_rate']:.0%} monthly savings rate puts you in the top 10% nationally", "category": "savings"})
+        elif m["savings_rate"] >= 0.20:
+            s.append({"title": "Strong Savings Habit", "description": f"Your {m['savings_rate']:.0%} savings rate exceeds national average", "category": "savings"})
 
         if m["months_covered"] >= 6:
             s.append({"title": "Fully Funded Emergency Fund", "description": f"{m['months_covered']:.1f} months of expenses covered", "category": "emergency"})
 
-        if m["debt_to_income"] <= 0.36:
+        if m["debt"] == 0:
+            s.append({"title": "Debt-Free", "description": "No debt allows maximum flexibility for wealth building", "category": "debt"})
+        elif m["debt_to_income"] < 0.10:
             s.append({"title": "Low Debt Burden", "description": f"Debt-to-income ratio of {m['debt_to_income']:.0%} is excellent", "category": "debt"})
 
-        # Updated: Use new diversification score for description
-        diversification_score = self._calculate_diversification_score(
-            u.get("plans", []),
-            m["investments"]
-        )
-        if diversification_score > 0:
-            s.append({"title": "Diversified Investments", "description": f"Investment diversification score: {diversification_score}/20", "category": "investments"})
+        div_score = self._calculate_diversification_score(u.get("plans", []), m["investments"])
+        if div_score >= 15:
+            s.append({"title": "Well-Diversified Portfolio", "description": f"Investment diversification score: {div_score}/20", "category": "investments"})
+
+        if m["side_income_pct"] >= 0.05:
+            s.append({"title": "Income Diversification", "description": f"{m['side_income_pct']:.0%} of income from side income provides financial resilience", "category": "income"})
 
         return s
 
@@ -167,25 +206,46 @@ class InsightEngine:
         v = []
 
         if m["months_covered"] < 3:
-            gap = (u.get("monthly_expenses", 0) * 6) - m["savings"]
-            v.append({"title": "Emergency Fund Critically Low", "severity": "high", "description": f"Only {m['months_covered']:.1f} months coverage. Target: 6 months (${'%0.0f' % (u.get('monthly_expenses',0)*6)})", "gap": gap})
+            target = m["monthly_expenses"] * 6
+            gap = target - m["savings"]
+            severity = "high" if m["months_covered"] < 1 else "medium"
+            v.append({
+                "title": "Emergency Fund Critically Low", 
+                "severity": severity, 
+                "description": f"Only {m['months_covered']:.1f} months coverage. Target: 6 months (${target:,.0f})", 
+                "gap": gap
+            })
 
-        if m["actual_savings_rate"] < 0.10:
-            v.append({"title": "Low Savings Rate", "severity": "medium", "description": f"{m['actual_savings_rate']:.0%} savings rate limits wealth accumulation (Target: 20%+)"})
+        # ✅ Now using correct savings_rate
+        if m["savings_rate"] < 0.10:
+            v.append({
+                "title": "Low Savings Rate", 
+                "severity": "medium", 
+                "description": f"{m['savings_rate']:.0%} monthly savings rate limits wealth accumulation (Target: 20%+)"
+            })
 
         if m["debt_to_income"] > 0.36:
-            v.append({"title": "High Debt-to-Income Ratio", "severity": "high", "description": f"{m['debt_to_income']:.0%} exceeds recommended 36% threshold"})
+            severity = "high" if m["debt_to_income"] > 0.50 else "medium"
+            v.append({
+                "title": "High Debt-to-Income Ratio", 
+                "severity": severity, 
+                "description": f"{m['debt_to_income']:.0%} exceeds recommended 36% threshold"
+            })
 
-        # Updated vulnerability check for diversification
-        diversification_score = self._calculate_diversification_score(
-            u.get("plans", []),
-            m["investments"]
-        )
-        if diversification_score < 20:
-            v.append({"title": "Incomplete Investment Diversification", "severity": "medium", "description": f"Diversification score is {diversification_score}/20, consider adding taxable investments, retirement accounts, or multiple plan types"})
+        div_score = self._calculate_diversification_score(u.get("plans", []), m["investments"])
+        if div_score < 12:
+            v.append({
+                "title": "Incomplete Investment Diversification", 
+                "severity": "medium", 
+                "description": f"Diversification score is {div_score}/20. Consider adding retirement accounts or multiple investment types"
+            })
 
-        if u.get("side_income", 0) == 0:
-            v.append({"title": "Single Point of Income Failure", "severity": "low", "description": "No side income — vulnerable if primary income is lost"})
+        if m["side_income_pct"] == 0:
+            v.append({
+                "title": "Single Point of Income Failure", 
+                "severity": "low", 
+                "description": "No side income — vulnerable if primary income is lost"
+            })
 
         return v
 
@@ -195,21 +255,39 @@ class InsightEngine:
         a = []
 
         if m["months_covered"] < 6:
-            target = u.get("monthly_expenses", 0) * 6
+            target = m["monthly_expenses"] * 6
             gap = target - m["savings"]
-            months = gap / m["surplus"] if m["surplus"] > 0 else None
+            months = gap / m["monthly_surplus"] if m["monthly_surplus"] > 0 else None
+            
             a.append({
                 "priority": 1,
                 "title": "Build Emergency Fund",
                 "description": f"Increase from ${m['savings']:,.0f} to ${target:,.0f}",
-                "steps": [
-                    f"Redirect ${m['surplus']:,.0f}/month to high-yield savings",
-                    f"Fully funded in {months:.0f} months" if months else "Increase surplus first",
+                "action_steps": [
+                    f"Redirect ${m['monthly_surplus']:,.0f}/month to high-yield savings",
+                    f"Target: Fully funded in {months:.0f} months" if months else "Review budget to increase surplus",
+                    "Keep in FDIC-insured account with 4.5%+ APY"
                 ],
+                "timeline": f"{months:.0f} months" if months else "Ongoing",
+                "impact": "Protects against job loss, medical emergencies, car repairs",
+                "category": "emergency_fund"
             })
 
-        if m["actual_savings_rate"] == 0 and m["surplus"] > 0:
-            a.append({"priority": 2, "title": "Start Saving Automatically", "description": "Automate monthly transfers to savings & investments"})
+        if m["debt"] > 0 and m["debt_to_income"] > 0.20:
+            months_to_payoff = m["debt"] / m["monthly_surplus"] if m["monthly_surplus"] > 0 else None
+            a.append({
+                "priority": 2,
+                "title": "Reduce Debt Burden",
+                "description": f"Pay down ${m['debt']:,.0f} balance",
+                "action_steps": [
+                    "Use debt avalanche method (highest interest first)",
+                    f"Allocate ${min(m['monthly_surplus'], m['debt']):,.0f}/month to debt",
+                    f"Debt-free in {months_to_payoff:.0f} months" if months_to_payoff else "Increase income or reduce expenses"
+                ],
+                "timeline": f"{months_to_payoff:.0f} months" if months_to_payoff else "Ongoing",
+                "impact": f"Frees ${m['monthly_surplus']:,.0f}/month for investing",
+                "category": "debt"
+            })
 
         return a
 
@@ -218,9 +296,19 @@ class InsightEngine:
     def _generate_alerts(self, m):
         alerts = []
         if m["months_covered"] < 2:
-            alerts.append({"type": "critical", "title": "⚠️ Emergency Fund Dangerously Low", "message": "One unexpected expense could derail your financial plan"})
+            alerts.append({
+                "type": "critical", 
+                "title": "⚠️ Emergency Fund Dangerously Low", 
+                "message": "One unexpected expense could derail your financial plan",
+                "action": "Priority: Build to 6 months expenses immediately"
+            })
         if m["debt_to_income"] > 0.50:
-            alerts.append({"type": "critical", "title": "⚠️ Debt Burden Excessive", "message": "Debt level is unsustainable"})
+            alerts.append({
+                "type": "critical", 
+                "title": "⚠️ Debt Burden Excessive", 
+                "message": f"{m['debt_to_income']:.0%} debt-to-income is unsustainable",
+                "action": "Consider debt consolidation or credit counseling"
+            })
         return alerts
 
     # ================= BENCHMARKS ================= #
@@ -229,8 +317,38 @@ class InsightEngine:
         age = u.get("age", 30)
         group = "25-34" if age < 35 else "35-44" if age < 45 else "45-54"
         b = self.BENCHMARKS[group]
+        
         return {
             "age_group": group,
-            "net_worth": {"user": m["net_worth"], "median": b["median_net_worth"]},
-            "savings_rate": {"user": m["actual_savings_rate"], "median": b["median_savings_rate"], "top_10": b["top_10_savings_rate"]},
+            "net_worth": {
+                "user": m["net_worth"], 
+                "median": b["median_net_worth"],
+                "percentile": self._calculate_percentile(m["net_worth"], b["median_net_worth"])
+            },
+            "savings_rate": {
+                "user": m["savings_rate"], 
+                "median": b["median_savings_rate"], 
+                "top_10": b["top_10_savings_rate"],
+                "percentile": self._calculate_percentile(m["savings_rate"], b["median_savings_rate"])
+            },
         }
+    
+    def _calculate_percentile(self, user_value: float, median_value: float) -> int:
+        """Estimate percentile based on distance from median"""
+        if median_value == 0:
+            return 50
+        
+        ratio = user_value / median_value
+        
+        if ratio >= 2.0:
+            return 90
+        elif ratio >= 1.5:
+            return 75
+        elif ratio >= 1.0:
+            return 60
+        elif ratio >= 0.75:
+            return 50
+        elif ratio >= 0.50:
+            return 40
+        else:
+            return 25
