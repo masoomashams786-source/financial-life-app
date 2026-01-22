@@ -71,59 +71,69 @@ class InsightEngine:
             score += val
             breakdown[name] = {"score": val, "max": maxv}
 
-        # Emergency Fund (25)
-        if m["months_covered"] >= 6: add("emergency_fund", 25, 25)
-        elif m["months_covered"] >= 3: add("emergency_fund", 18, 25)
-        elif m["months_covered"] >= 1: add("emergency_fund", 10, 25)
-        else: add("emergency_fund", 5, 25)
+        # 1️Emergency Fund (20)
+        if m["months_covered"] >= 6:
+            add("emergency_fund", 20, 20)
+        elif m["months_covered"] >= 3:
+            add("emergency_fund", 15, 20)
+        elif m["months_covered"] >= 1:
+            add("emergency_fund", 10, 20)
+        else:
+            add("emergency_fund", 5, 20)
 
-        # Savings (25)
-        if m["actual_savings_rate"] >= 0.20: add("savings", 25, 25)
-        elif m["actual_savings_rate"] >= 0.10: add("savings", 18, 25)
-        elif m["actual_savings_rate"] > 0: add("savings", 10, 25)
-        else: add("savings", 0, 25)
+        # 2️ Debt Management (25)
+        dti = m["debt_to_income"]
+        if m["debt"] == 0:
+            add("debt", 25, 25)
+        elif dti < 0.10:
+            add("debt", 22, 25)
+        elif dti < 0.20:
+            add("debt", 18, 25)
+        elif dti <= 0.36:
+            add("debt", 15, 25)
+        else:
+            add("debt", 8, 25)
 
-        # Debt (20)
-        if m["debt_to_income"] <= 0.36: add("debt", 20, 20)
-        elif m["debt_to_income"] <= 0.50: add("debt", 10, 20)
-        else: add("debt", 5, 20)
+        # 3️ Savings Rate (20)
+        sr = m["actual_savings_rate"]
+        if sr >= 0.40:
+            add("savings", 20, 20)
+        elif sr >= 0.30:
+            add("savings", 18, 20)
+        elif sr >= 0.20:
+            add("savings", 15, 20)
+        elif sr >= 0.10:
+            add("savings", 10, 20)
+        else:
+            add("savings", 5, 20)
 
-        # Investments & Diversification (20) ✅ Fixed version
+        # 4️Investment Diversification (20)
         diversification_score = self._calculate_diversification_score(
             u.get("plans", []),
             m["investments"]
         )
         add("diversification", diversification_score, 20)
 
-        # Income Stability (10)
-        if m["income"] > 0: add("income", 10, 10)
-        else: add("income", 0, 10)
+        # 5️Income Stability (15)
+        income_score = 0
+        if m["income"] > 0:
+            income_score = 10
 
-        rating = "Excellent" if score >= 80 else "Good" if score >= 65 else "Fair" if score >= 50 else "Needs Improvement"
-        return {"score": score, "rating": rating, "breakdown": breakdown}
+            total_income = m["income"]
+            side_income = u.get("side_income", 0)
+            if total_income > 0 and (side_income / total_income) >= 0.05:
+                income_score += 5
 
-    # ================= NEW HELPER ================= #
-    def _calculate_diversification_score(self, plans, investments):
-        score = 0
+        add("income", income_score, 15)
 
-        # +8: Taxable investments
-        if investments > 0:
-            score += 8
-
-        # +8: Retirement account (401k / IRA / Roth)
-        retirement_keywords = ("401k", "ira", "roth")
-        has_retirement = any(
-            any(k in p["plan_type"].lower() for k in retirement_keywords)
-            for p in plans
+        rating = (
+            "Excellent" if score >= 85
+            else "Good" if score >= 70
+            else "Fair" if score >= 55
+            else "Needs Improvement"
         )
-        if has_retirement:
-            score += 8
 
-        # +4: Two or more different plan types
-        if len({p["plan_type"] for p in plans}) >= 2:
-            score += 4
-
-        return min(score, 20)
+        return {"score": score, "rating": rating, "breakdown": breakdown}
 
     # ================= STRENGTHS ================= #
 
