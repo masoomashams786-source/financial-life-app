@@ -70,48 +70,4 @@ def get_financial_analysis():
         print(f"Analysis error: {str(e)}")
         return jsonify({"error": "Failed to generate analysis"}), 500
     
-    # Add to insights.py
-@insights_bp.route("/debug", methods=["GET"])
-@jwt_required()
-def debug_analysis():
-    """Debug endpoint to verify scoring"""
-    user_id = get_jwt_identity()
     
-    snapshot = FinancialSnapshot.query.filter_by(user_id=int(user_id)).first()
-    plans = FinancialPlan.query.filter_by(user_id=int(user_id)).all()
-    
-    if not snapshot:
-        return jsonify({"error": "No snapshot"}), 404
-    
-    user_age = snapshot.age if hasattr(snapshot, 'age') and snapshot.age else (
-        plans[0].user_current_age if plans and plans[0].user_current_age else 30
-    )
-    
-    user_data = {
-        'age': user_age,
-        'monthly_income': snapshot.net_income,
-        'side_income': snapshot.side_income,
-        'monthly_expenses': snapshot.monthly_expenses,
-        'savings': snapshot.savings,
-        'investments': snapshot.investments,
-        'debt': snapshot.debt,
-        'plans': [
-            {
-                'plan_type': p.plan_type,
-                'cash_value': p.cash_value,
-                'monthly_contribution': p.monthly_contribution,
-                'years_to_contribute': p.years_to_contribute,
-                'user_current_age': p.user_current_age
-            }
-            for p in plans
-        ]
-    }
-    
-    engine = InsightEngine()
-    analysis = engine.analyze_financial_profile(user_data)
-    
-    return jsonify({
-        "user_data": user_data,
-        "metrics": analysis["metrics"],
-        "health_score": analysis["health_score"]
-    }), 200
