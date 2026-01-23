@@ -5,10 +5,10 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 30000, // ✅ INCREASED to 30 seconds (was 15 seconds)
+  timeout: 30000, //  INCREASED to 30 seconds (was 15 seconds)
 });
 
-// ✅ REQUEST INTERCEPTOR - Automatically attach JWT token
+//  REQUEST INTERCEPTOR - Automatically attach JWT token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -23,7 +23,7 @@ api.interceptors.request.use(
   }
 );
 
-// ✅ RESPONSE INTERCEPTOR - Handle errors globally
+// RESPONSE INTERCEPTOR - Handle errors globally
 api.interceptors.response.use(
   (response) => response,
   (error) => {
