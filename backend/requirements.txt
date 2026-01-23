@@ -45,4 +45,4 @@ urllib3==2.6.2
 webencodings==0.5.1
 Werkzeug==3.1.4
 yfinance==0.2.38
-gunicorn
+psycopg2-binary==2.9.10

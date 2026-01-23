@@ -48,7 +48,7 @@ class InsightEngine:
         # Calculate monthly surplus (what's left after expenses)
         monthly_surplus = total_income - monthly_expenses
         
-        # ✅ CORRECT: Savings rate = what % of income you're saving/investing
+        #  CORRECT: Savings rate = what % of income you're saving/investing
         # This includes ALL contributions to financial plans (401k, IRA, etc.)
         savings_rate = plan_contributions / total_income if total_income > 0 else 0
         
@@ -72,7 +72,7 @@ class InsightEngine:
             "debt": debt,
             "monthly_surplus": monthly_surplus,
             "plan_contributions": plan_contributions,
-            "savings_rate": savings_rate,  # ✅ This is now CORRECT
+            "savings_rate": savings_rate,  
             "months_covered": months_covered,
             "debt_to_income": debt_to_income,
             "side_income_pct": side_income_pct,
@@ -90,7 +90,7 @@ class InsightEngine:
             score += val
             breakdown[name] = {"score": val, "max": maxv, "status": status}
 
-        # ✅ 1. Emergency Fund (20 points) - EXACT MATCH TO YOUR CRITERIA
+        #  1. Emergency Fund (20 points) - EXACT MATCH TO YOUR CRITERIA
         months = m["months_covered"]
         if months >= 6:
             add("emergency_fund", 20, 20, "excellent")
@@ -101,7 +101,7 @@ class InsightEngine:
         else:
             add("emergency_fund", 5, 20, "poor")
 
-        # ✅ 2. Debt Management (25 points) - EXACT MATCH TO YOUR CRITERIA
+        #  2. Debt Management (25 points) - EXACT MATCH TO YOUR CRITERIA
         dti = m["debt_to_income"]
         if m["debt"] == 0:
             add("debt_management", 25, 25, "excellent")
@@ -114,7 +114,7 @@ class InsightEngine:
         else:
             add("debt_management", 8, 25, "poor")
 
-        # ✅ 3. Savings Rate (20 points) - EXACT MATCH TO YOUR CRITERIA
+        # 3. Savings Rate (20 points) - EXACT MATCH TO YOUR CRITERIA
         sr = m["savings_rate"]
         if sr >= 0.40:
             add("savings_rate", 20, 20, "elite")
@@ -127,12 +127,12 @@ class InsightEngine:
         else:
             add("savings_rate", 5, 20, "poor")
 
-        # ✅ 4. Investment Diversification (20 points) - EXACT MATCH TO YOUR CRITERIA
+        #  4. Investment Diversification (20 points) - EXACT MATCH TO YOUR CRITERIA
         div_score = self._calculate_diversification_score(u.get("plans", []), m["investments"])
         status = "excellent" if div_score >= 18 else "good" if div_score >= 12 else "fair" if div_score >= 6 else "poor"
         add("investment_diversification", div_score, 20, status)
 
-        # ✅ 5. Income Stability (15 points) - EXACT MATCH TO YOUR CRITERIA
+        # 5. Income Stability (15 points) - EXACT MATCH TO YOUR CRITERIA
         income_score = 10  # Base for having main income source
         if m["side_income_pct"] >= 0.05:
             income_score = 15
@@ -149,7 +149,7 @@ class InsightEngine:
 
         return {"score": score, "rating": rating, "breakdown": breakdown}
 
-    # ✅ Investment Diversification Scoring - EXACT MATCH TO YOUR CRITERIA
+    # Investment Diversification Scoring - EXACT MATCH TO YOUR CRITERIA
     def _calculate_diversification_score(self, plans: List[Dict], investments: float) -> int:
         """
         Calculate investment diversification score (0-20 points)
